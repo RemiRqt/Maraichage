@@ -70,37 +70,37 @@ function TaskCard({ task, onComplete, completingId }) {
   return (
     <div className={`flex items-stretch rounded-xl border overflow-hidden transition-all ${isDone ? 'opacity-50 border-gray-200' : isLate ? 'border-red-300 shadow-sm' : 'border-gray-200 shadow-sm'}`}>
       {/* Bande de couleur gauche */}
-      <div className={`w-1.5 flex-shrink-0 ${isDone ? 'bg-gray-300' : isLate ? 'bg-red-500' : meta.color}`} />
+      <div className={`w-1 sm:w-1.5 flex-shrink-0 ${isDone ? 'bg-gray-300' : isLate ? 'bg-red-500' : meta.color}`} />
 
       {/* Contenu */}
-      <div className="flex-1 flex items-center gap-3 px-4 py-3 min-w-0">
-        <span className="text-xl flex-shrink-0" title={species || ''}>
+      <div className="flex-1 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-3 min-w-0">
+        <span className="text-lg sm:text-xl flex-shrink-0" title={species || ''}>
           {species ? getSpeciesIcon(species) : meta.icon}
         </span>
         <div className="flex-1 min-w-0">
-          <p className={`text-sm font-semibold leading-tight ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+          <p className={`text-xs sm:text-sm font-semibold leading-tight ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}>
             {task.taskTemplate?.templateName || task.name}
           </p>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
+          <div className="flex flex-wrap items-center gap-x-1 sm:gap-x-2 gap-y-0.5 mt-0.5">
             {species && (
-              <span className="text-xs text-gray-500">{species}</span>
+              <span className="text-[10px] sm:text-xs text-gray-500">{species}</span>
             )}
             {cultivar && cultivar !== species && (
-              <span className="text-xs text-gray-400">· {cultivar}</span>
+              <span className="text-[10px] sm:text-xs text-gray-400 hidden sm:inline">· {cultivar}</span>
             )}
             {task.bed?.name && (
-              <span className="text-xs text-gray-400">· {task.bed.name}</span>
+              <span className="text-[10px] sm:text-xs text-gray-400">· {task.bed.name}</span>
             )}
           </div>
           {(est > 0 || isLate) && (
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-0.5">
               {est > 0 && (
                 <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-400">
                   <ClockIcon className="h-3 w-3" />{formatDuration(est)}
                 </span>
               )}
               {isLate && (
-                <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">En retard</span>
+                <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Retard</span>
               )}
             </div>
           )}
@@ -112,19 +112,19 @@ function TaskCard({ task, onComplete, completingId }) {
         <button
           onClick={() => onComplete(task)}
           disabled={completingId === task.id}
-          className="flex items-center justify-center w-16 bg-green-50 hover:bg-green-100 active:bg-green-200 transition-colors border-l border-green-200 flex-shrink-0"
+          className="flex items-center justify-center w-12 sm:w-16 bg-green-50 hover:bg-green-100 active:bg-green-200 transition-colors border-l border-green-200 flex-shrink-0"
           aria-label={`Valider "${task.name}"`}
         >
           {completingId === task.id ? (
             <span className="text-green-600 text-sm">…</span>
           ) : (
-            <CheckIcon className="h-6 w-6 text-green-600" />
+            <CheckIcon className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
           )}
         </button>
       )}
       {isDone && (
-        <div className="flex items-center justify-center w-12 bg-gray-50 flex-shrink-0">
-          <CheckIcon className="h-5 w-5 text-gray-400" />
+        <div className="flex items-center justify-center w-10 sm:w-12 bg-gray-50 flex-shrink-0">
+          <CheckIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
         </div>
       )}
     </div>
@@ -487,29 +487,29 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 max-w-3xl mx-auto">
       {/* En-tête */}
-      <div className="page-header mb-5">
-        <h1 className="page-title">✅ Tâches</h1>
-        <button onClick={() => { setEditingTask(null); setModalOpen(true); }} className="btn-primary flex items-center gap-2">
-          <PlusIcon className="h-4 w-4" /> Nouvelle
+      <div className="page-header mb-4 sm:mb-5">
+        <h1 className="page-title text-lg sm:text-xl">✅ Tâches</h1>
+        <button onClick={() => { setEditingTask(null); setModalOpen(true); }} className="btn-primary flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2">
+          <PlusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Nouvelle</span><span className="sm:hidden">+</span>
         </button>
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between gap-3 mb-5">
-        <div className="flex items-center gap-2">
-          <button onClick={navigatePrev} className="btn-ghost p-2"><ChevronLeftIcon className="h-5 w-5" /></button>
-          <h2 className="text-sm font-semibold text-gray-800 capitalize min-w-[140px] text-center">{periodLabel}</h2>
-          <button onClick={navigateNext} className="btn-ghost p-2"><ChevronRightIcon className="h-5 w-5" /></button>
-          <button onClick={() => setCurrentDate(new Date())} className="btn-secondary text-xs px-2 py-1">Auj.</button>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 mb-4 sm:mb-5">
+        <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-center">
+          <button onClick={navigatePrev} className="btn-ghost p-1.5 sm:p-2"><ChevronLeftIcon className="h-4 w-4 sm:h-5 sm:w-5" /></button>
+          <h2 className="text-xs sm:text-sm font-semibold text-gray-800 capitalize min-w-[120px] sm:min-w-[140px] text-center">{periodLabel}</h2>
+          <button onClick={navigateNext} className="btn-ghost p-1.5 sm:p-2"><ChevronRightIcon className="h-4 w-4 sm:h-5 sm:w-5" /></button>
+          <button onClick={() => setCurrentDate(new Date())} className="btn-secondary text-[10px] sm:text-xs px-1.5 sm:px-2 py-1">Auj.</button>
         </div>
         <div className="flex gap-0.5 p-0.5 bg-gray-100 rounded-lg">
           {VIEW_MODES.map((v) => (
             <button
               key={v.id}
               onClick={() => setViewMode(v.id)}
-              className={`px-2.5 py-1 text-xs rounded-md transition-all ${viewMode === v.id ? 'bg-white text-[#1B5E20] shadow-sm font-semibold' : 'text-gray-500'}`}
+              className={`px-2 sm:px-2.5 py-1 text-[10px] sm:text-xs rounded-md transition-all ${viewMode === v.id ? 'bg-white text-[#1B5E20] shadow-sm font-semibold' : 'text-gray-500'}`}
             >
               {v.label}
             </button>

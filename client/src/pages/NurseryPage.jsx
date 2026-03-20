@@ -292,19 +292,19 @@ export default function NurseryPage() {
   const activeStatuses = statusOrder.filter((s) => statusCounts[s] > 0 || s === filterStatus);
 
   return (
-    <div className="p-4 md:p-6 max-w-6xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto">
       {/* En-tête */}
-      <div className="page-header mb-6">
-        <h1 className="page-title">🌿 Pépinière</h1>
-        <button onClick={() => setModalOpen(true)} className="btn-primary flex items-center gap-2">
-          <PlusIcon className="h-4 w-4" aria-hidden="true" />
-          Nouveau lot
+      <div className="page-header mb-4 sm:mb-6">
+        <h1 className="page-title text-lg sm:text-xl">🌿 Pépinière</h1>
+        <button onClick={() => setModalOpen(true)} className="btn-primary flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2">
+          <PlusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
+          <span className="hidden sm:inline">Nouveau lot</span><span className="sm:hidden">+ Lot</span>
         </button>
       </div>
 
       {/* Stats cliquables */}
       {!loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-5">
           <button
             onClick={() => setFilterStatus('')}
             className={`card p-3 text-center hover:shadow-md transition-shadow ${!filterStatus ? 'ring-2 ring-green-500' : ''}`}

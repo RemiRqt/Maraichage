@@ -281,15 +281,15 @@ export default function ChartsPage() {
   }), [sheets]);
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 max-w-5xl mx-auto">
       {/* En-tête */}
-      <div className="page-header mb-6">
-        <h1 className="page-title">📋 Fiches techniques</h1>
+      <div className="page-header mb-4 sm:mb-6">
+        <h1 className="page-title text-lg sm:text-xl">📋 Fiches techniques</h1>
       </div>
 
       {/* Stats résumé */}
       {!loading && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3 mb-4 sm:mb-5">
           <button onClick={() => { setFilterChart(''); setFilterMethod(''); }} className={`card p-3 text-center hover:shadow-md transition-shadow ${!filterChart ? 'ring-2 ring-green-500' : ''}`}>
             <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             <p className="text-xs text-gray-500">Espèces</p>

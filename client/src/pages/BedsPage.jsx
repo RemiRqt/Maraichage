@@ -41,10 +41,10 @@ function BedStrip({ bed, onClick, onEdit }) {
       aria-label={`Planche ${bed.name}${isFree ? ', libre' : ''}`}
     >
       {/* Label planche + bouton édition */}
-      <div className="flex flex-col items-center justify-center px-3 py-2 bg-gray-50 border-r border-gray-200 flex-shrink-0 min-w-[80px] group-hover:bg-gray-100 transition-colors relative">
-        <span className="text-xs font-bold text-gray-900">{bed.name}</span>
-        <span className="text-[10px] text-gray-400">
-          {bed.lengthM && bed.widthM ? `${parseFloat(bed.lengthM)}×${parseFloat(bed.widthM)}m` : `${totalArea}m²`}
+      <div className="flex flex-col items-center justify-center px-2 sm:px-3 py-2 bg-gray-50 border-r border-gray-200 flex-shrink-0 min-w-[56px] sm:min-w-[80px] group-hover:bg-gray-100 transition-colors relative">
+        <span className="text-[10px] sm:text-xs font-bold text-gray-900">{bed.name}</span>
+        <span className="text-[8px] sm:text-[10px] text-gray-400">
+          {totalArea}m²
         </span>
         <button
           onClick={(e) => onEdit(bed, e)}
@@ -67,7 +67,7 @@ function BedStrip({ bed, onClick, onEdit }) {
           return (
             <div
               key={p.id}
-              className="flex flex-col items-center justify-center px-2 py-1.5"
+              className="flex flex-col items-center justify-center px-1 sm:px-2 py-1"
               style={{
                 flex: area > 0 ? area : totalArea / plantings.length,
                 backgroundColor: sc.bg,
@@ -75,11 +75,11 @@ function BedStrip({ bed, onClick, onEdit }) {
               }}
               title={`${speciesName} — ${cultivarName} — ${area > 0 ? area + 'm²' : ''} ${STATUS_LABELS[p.status] || p.status}`}
             >
-              <span className="text-base leading-none">{getSpeciesIcon(speciesName)}</span>
-              <span className="text-xs font-semibold leading-tight text-center truncate w-full" style={{ color: sc.text }}>
+              <span className="text-sm sm:text-base leading-none">{getSpeciesIcon(speciesName)}</span>
+              <span className="text-[9px] sm:text-xs font-semibold leading-tight text-center truncate w-full" style={{ color: sc.text }}>
                 {cultivarName}
               </span>
-              <div className="flex items-center gap-1 mt-0.5">
+              <div className="hidden sm:flex items-center gap-1 mt-0.5">
                 {area > 0 && (
                   <span className="text-[10px] opacity-60" style={{ color: sc.text }}>{area}m²</span>
                 )}
@@ -238,9 +238,9 @@ export default function BedsPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto">
-      <div className="page-header mb-6">
-        <h1 className="page-title">🗺️ Parcelles</h1>
+    <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
+      <div className="page-header mb-4 sm:mb-6">
+        <h1 className="page-title text-lg sm:text-xl">🗺️ Parcelles</h1>
       </div>
 
       {loading ? (
@@ -249,7 +249,7 @@ export default function BedsPage() {
         <>
           {/* Onglets de zones */}
           {zones.length > 0 && (
-            <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-5 w-fit overflow-x-auto" role="tablist">
+            <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-3 sm:mb-5 w-full sm:w-fit overflow-x-auto" role="tablist">
               {zones.map((zone) => (
                 <button
                   key={zone.id}
@@ -268,7 +268,7 @@ export default function BedsPage() {
           )}
 
           {/* Résumé + actions zone */}
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
             <div className="flex items-center gap-3">
               <p className="text-sm text-gray-500">
                 <span className="font-semibold text-gray-800">{occupiedCount}/{currentBeds.length}</span> planches occupées
@@ -285,7 +285,7 @@ export default function BedsPage() {
                 Dimensions {activeZone?.name}
               </button>
             </div>
-            <div className="flex flex-wrap gap-1.5 text-[10px]">
+            <div className="hidden sm:flex flex-wrap gap-1.5 text-[10px]">
               {Object.entries(STATUS_COLORS).map(([status, c]) => (
                 <span key={status} className="px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: c.bg, color: c.text }}>
                   {STATUS_LABELS[status] || status}

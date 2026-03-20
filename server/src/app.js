@@ -107,9 +107,6 @@ app.use(`${API_PREFIX}/calendar`, calendarRoutes);
 app.use(`${API_PREFIX}/suppliers`, supplierRoutes);
 app.use(`${API_PREFIX}/invoices`, invoiceRoutes);
 
-// ---- Health check ----
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
-
 // ---- Servir le frontend React en production ----
 if (process.env.NODE_ENV === 'production') {
   const clientDistPath = path.join(__dirname, '..', '..', 'client', 'dist');

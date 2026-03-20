@@ -12,7 +12,7 @@ const { fetchMissingWeatherData } = require('./services/weatherService');
 const PORT = process.env.PORT || 3001;
 
 // Démarrage du serveur
-const server = app.listen(PORT, async () => {
+const server = app.listen(PORT, '0.0.0.0', async () => {
   logger.info(`🌱 MalaMaraichageApp démarré sur le port ${PORT}`);
   logger.info(`🌍 Environnement : ${process.env.NODE_ENV || 'development'}`);
 

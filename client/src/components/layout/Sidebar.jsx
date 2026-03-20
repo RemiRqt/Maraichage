@@ -37,7 +37,6 @@ const navSections = [
     items: [
       { emoji: '📸', label: 'Journal', path: '/journal' },
       { emoji: '📊', label: 'Analytique', path: '/analytique' },
-      { emoji: '☁️', label: 'Météo', path: '/meteo' },
     ],
   },
   {

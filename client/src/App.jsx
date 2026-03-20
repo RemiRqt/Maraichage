@@ -26,7 +26,7 @@ import SeedsPage from './pages/SeedsPage';
 import JournalPage from './pages/JournalPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
-import WeatherPage from './pages/WeatherPage';
+// import WeatherPage from './pages/WeatherPage';
 import BedDetailPage from './pages/BedDetailPage';
 import PlantingDetailPage from './pages/PlantingDetailPage';
 import PlanningPage from './pages/PlanningPage';
@@ -71,7 +71,6 @@ const App = () => {
                 <Route path="/graines" element={<SeedsPage />} />
                 <Route path="/journal" element={<JournalPage />} />
                 <Route path="/analytique" element={<AnalyticsPage />} />
-                <Route path="/meteo" element={<WeatherPage />} />
                 <Route path="/planification" element={<PlanningPage />} />
                 <Route path="/fiches-techniques" element={<ChartsPage />} />
                 <Route path="/plantations/:plantingId" element={<PlantingDetailPage />} />

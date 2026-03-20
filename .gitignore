@@ -1,0 +1,42 @@
+# Environnement
+.env
+.env.local
+.env.*.local
+
+# Dépendances
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build
+client/dist/
+server/public/
+
+# Logs
+*.log
+logs/
+
+# Uploads (ne pas versionner les fichiers uploadés)
+server/uploads/
+!server/uploads/.gitkeep
+
+# Base de données locale
+*.sqlite
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Prisma
+server/prisma/migrations/dev.db
+
+# Tests
+coverage/
+.nyc_output/

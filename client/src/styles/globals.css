@@ -1,0 +1,157 @@
+/* ============================================================
+   Styles globaux — MalaMaraichageApp
+   ============================================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- Variables CSS ---- */
+:root {
+  --color-primary: #1B5E20;
+  --color-primary-light: #2E7D32;
+  --color-accent: #FFF9C4;
+  --color-bg: #FAFAFA;
+  --color-bg-card: #FFFFFF;
+  --color-border: #E5E7EB;
+  --color-text: #1F2937;
+  --color-text-muted: #6B7280;
+  --sidebar-width: 260px;
+  --bottom-nav-height: 64px;
+}
+
+/* ---- Base ---- */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply font-sans text-gray-800 bg-gray-50;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---- Scrollbar personnalisée ---- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
+
+/* ---- Composants réutilisables ---- */
+@layer components {
+  /* Bouton principal */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
+           bg-primary-900 text-white font-medium text-sm
+           hover:bg-primary-800 active:bg-primary-700
+           focus:outline-none focus:ring-2 focus:ring-primary-900 focus:ring-offset-2
+           transition-colors min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Bouton secondaire */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
+           bg-white text-primary-900 font-medium text-sm
+           border border-primary-900
+           hover:bg-primary-50 active:bg-primary-100
+           focus:outline-none focus:ring-2 focus:ring-primary-900 focus:ring-offset-2
+           transition-colors min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Bouton danger */
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
+           bg-red-600 text-white font-medium text-sm
+           hover:bg-red-700 active:bg-red-800
+           focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2
+           transition-colors min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Bouton ghost */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
+           text-gray-600 font-medium text-sm
+           hover:bg-gray-100 active:bg-gray-200
+           focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2
+           transition-colors min-h-[44px] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Carte */
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-4;
+  }
+
+  /* Champ de formulaire */
+  .form-input {
+    @apply w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm
+           focus:outline-none focus:ring-2 focus:ring-primary-900 focus:border-transparent
+           placeholder-gray-400 min-h-[44px]
+           disabled:bg-gray-50 disabled:text-gray-400;
+  }
+
+  /* Label de formulaire */
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+
+  /* Message d'erreur formulaire */
+  .form-error {
+    @apply text-xs text-red-600 mt-1;
+  }
+
+  /* Badge statut */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  /* Section titre */
+  .page-title {
+    @apply text-2xl font-bold text-gray-900;
+  }
+
+  /* En-tête de page */
+  .page-header {
+    @apply flex items-center justify-between mb-6;
+  }
+}
+
+/* ---- Statuts des plantations ---- */
+.status-PLANIFIE    { @apply bg-gray-100 text-gray-700; }
+.status-SEME        { @apply bg-amber-100 text-amber-800; }
+.status-EN_PEPINIERE { @apply bg-purple-100 text-purple-800; }
+.status-TRANSPLANTE { @apply bg-blue-100 text-blue-800; }
+.status-EN_CROISSANCE { @apply bg-green-100 text-green-800; }
+.status-EN_RECOLTE  { @apply bg-orange-100 text-orange-800; }
+.status-TERMINE     { @apply bg-slate-100 text-slate-700; }
+.status-ECHEC       { @apply bg-red-100 text-red-800; }
+
+/* ---- Priorités des tâches ---- */
+.priority-BASSE    { @apply bg-gray-100 text-gray-600; }
+.priority-NORMALE  { @apply bg-blue-100 text-blue-700; }
+.priority-HAUTE    { @apply bg-orange-100 text-orange-700; }
+.priority-URGENTE  { @apply bg-red-100 text-red-700; }
+
+/* ---- Animation de chargement ---- */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.loading-spinner {
+  @apply w-5 h-5 border-2 border-primary-900 border-t-transparent rounded-full;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ---- Mode offline badge ---- */
+.offline-badge {
+  @apply fixed top-4 left-1/2 -translate-x-1/2 z-50
+         bg-amber-500 text-white text-xs font-medium
+         px-3 py-1.5 rounded-full shadow-lg;
+}

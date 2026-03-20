@@ -1,0 +1,534 @@
+// ============================================================
+// Schéma Prisma — MalaMaraichageApp
+// Base de données SQLite (local)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// MODÈLES (enums → String pour compatibilité SQLite)
+// ============================================================
+
+/// Utilisateur de l'application (maraîcher ou responsable)
+/// role: MARAICHER | RESPONSABLE
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("MARAICHER")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  journalEntries JournalEntry[]
+  refreshTokens  RefreshToken[]
+
+  @@map("users")
+}
+
+/// Token de rafraîchissement JWT
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+/// Saison de production
+model Season {
+  id        String   @id @default(uuid())
+  name      String
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  isActive  Boolean  @default(false) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  plantings Planting[]
+
+  @@map("seasons")
+}
+
+/// Zone de culture (Serre, Zone Nord, Zone Sud)
+model Zone {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  beds           Bed[]
+  tasks          Task[]
+  journalEntries JournalEntry[]
+
+  @@map("zones")
+}
+
+/// Planche de culture
+model Bed {
+  id            String   @id @default(uuid())
+  zoneId        String   @map("zone_id")
+  name          String
+  lengthM       Decimal  @map("length_m")
+  widthM        Decimal  @map("width_m")
+  areaM2        Decimal  @map("area_m2")
+  positionOrder Int      @default(0) @map("position_order")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  zone           Zone           @relation(fields: [zoneId], references: [id])
+  plantings      Planting[]
+  tasks          Task[]
+  journalEntries JournalEntry[]
+
+  @@map("beds")
+}
+
+/// Espèce végétale
+/// category: LEGUME | AROMATIQUE | FRUIT | FLEUR
+model Species {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  family    String
+  category  String
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  cultivars    Cultivar[]
+  cultureSheet CultureSheet?
+
+  @@map("species")
+}
+
+/// Cultivar / Variété
+model Cultivar {
+  id          String   @id @default(uuid())
+  speciesId   String   @map("species_id")
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  species        Species         @relation(fields: [speciesId], references: [id])
+  plantings      Planting[]
+  nurseryBatches NurseryBatch[]
+  seedInventory  SeedInventory[]
+  invoiceLines   InvoiceLine[]
+
+  @@map("cultivars")
+}
+
+/// Fiche technique de culture — hub par espèce
+/// sowingMethod: PEPINIERE | SEMIS_DIRECT | LES_DEUX (calculé selon sous-chartes présentes)
+model CultureSheet {
+  id            String   @id @default(uuid())
+  speciesId     String   @unique @map("species_id")
+  sowingMethod  String?  @map("sowing_method")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  species         Species              @relation(fields: [speciesId], references: [id])
+  nurseryChart    NurseryChart?
+  transplantChart TransplantChart?
+  directSowChart  DirectSowChart?
+  yieldChart      YieldChart?
+  taskTemplates   TaskTemplate[]
+  plantings       Planting[]
+
+  @@map("culture_sheets")
+}
+
+/// Données pépinière (contenant, germination, rempotages)
+model NurseryChart {
+  id                     String   @id @default(uuid())
+  cultureSheetId         String   @unique @map("culture_sheet_id")
+  containerType          String   @map("container_type")
+  seedsPerCell           Int      @map("seeds_per_cell")
+  technique              String?
+  germinationDays        Int      @map("germination_days")
+  germinationTempC       Int?     @map("germination_temp_c")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  cultureSheet CultureSheet       @relation(fields: [cultureSheetId], references: [id], onDelete: Cascade)
+  repotStages  NurseryRepotStage[]
+
+  @@map("nursery_charts")
+}
+
+/// Étape de rempotage (1 à 3 par nursery chart)
+model NurseryRepotStage {
+  id             String   @id @default(uuid())
+  nurseryChartId String   @map("nursery_chart_id")
+  stageNumber    Int      @map("stage_number")
+  containerType  String   @map("container_type")
+  daysAfterSowing Int     @map("days_after_sowing")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  nurseryChart NurseryChart @relation(fields: [nurseryChartId], references: [id], onDelete: Cascade)
+
+  @@unique([nurseryChartId, stageNumber])
+  @@map("nursery_repot_stages")
+}
+
+/// Données transplantation (espacements, densité, durée pépinière, maturité)
+model TransplantChart {
+  id                  String   @id @default(uuid())
+  cultureSheetId      String   @unique @map("culture_sheet_id")
+  rowCount            Int      @map("row_count")
+  rowSpacingCm        Decimal  @map("row_spacing_cm")
+  plantSpacingCm      Decimal  @map("plant_spacing_cm")
+  nurseryDurationDays Int?     @map("nursery_duration_days")
+  daysToMaturity      Int      @map("days_to_maturity")
+  harvestWindowDays   Int      @map("harvest_window_days")
+  sowWeekStart        Int?     @map("sow_week_start")
+  sowWeekEnd          Int?     @map("sow_week_end")
+  safetyMarginPct     Int?     @map("safety_margin_pct")
+  plantsPerM2         Decimal? @map("plants_per_m2")
+  plantsPerM2WithMargin Decimal? @map("plants_per_m2_margin")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  cultureSheet CultureSheet @relation(fields: [cultureSheetId], references: [id], onDelete: Cascade)
+
+  @@map("transplant_charts")
+}
+
+/// Données semis direct (espacements, maturité, fenêtre de semis)
+model DirectSowChart {
+  id              String   @id @default(uuid())
+  cultureSheetId  String   @unique @map("culture_sheet_id")
+  rowCount        Int      @map("row_count")
+  rowSpacingCm    Decimal  @map("row_spacing_cm")
+  daysToMaturity  Int      @map("days_to_maturity")
+  harvestWindowDays Int    @map("harvest_window_days")
+  safetyMarginPct Int?     @map("safety_margin_pct")
+  sowWeekStart    Int?     @map("sow_week_start")
+  sowWeekEnd      Int?     @map("sow_week_end")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  cultureSheet CultureSheet @relation(fields: [cultureSheetId], references: [id], onDelete: Cascade)
+
+  @@map("direct_sow_charts")
+}
+
+/// Données rendement (prix, quantités, revenu par planche de 30m)
+model YieldChart {
+  id                    String   @id @default(uuid())
+  cultureSheetId        String   @unique @map("culture_sheet_id")
+  saleUnit              String   @map("sale_unit")
+  weightPerUnitG        Decimal? @map("weight_per_unit_g")
+  pricePerUnit          Decimal? @map("price_per_unit")
+  yieldQtyPer30m        Decimal? @map("yield_qty_per_30m")
+  yieldKgPer30m         Decimal? @map("yield_kg_per_30m")
+  revenuePer30m         Decimal? @map("revenue_per_30m")
+  harvestDays           Int?     @map("harvest_days")
+  revenuePerDayPerM     Decimal? @map("revenue_per_day_per_m")
+  yieldKgPerDayPerM     Decimal? @map("yield_kg_per_day_per_m")
+  harvestsPerWeek       Decimal? @map("harvests_per_week")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  cultureSheet CultureSheet @relation(fields: [cultureSheetId], references: [id], onDelete: Cascade)
+
+  @@map("yield_charts")
+}
+
+/// Template de tâche lié à une fiche technique
+/// direction: AVANT | APRES (par rapport à la date d'implantation)
+model TaskTemplate {
+  id             String   @id @default(uuid())
+  cultureSheetId String   @map("culture_sheet_id")
+  name           String
+  templateName   String?  @map("template_name")
+  direction      String   @default("APRES")
+  daysOffset     Int      @map("days_offset")
+  minutesPerM2   Decimal? @map("minutes_per_m2")
+  description    String?
+  positionOrder  Int      @default(0) @map("position_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  cultureSheet CultureSheet @relation(fields: [cultureSheetId], references: [id], onDelete: Cascade)
+  tasks        Task[]
+
+  @@map("task_templates")
+}
+
+/// Plantation concrète sur une planche pour une saison
+/// status: PLANIFIE | SEME | EN_PEPINIERE | TRANSPLANTE | EN_CROISSANCE | EN_RECOLTE | TERMINE | ECHEC
+model Planting {
+  id                     String    @id @default(uuid())
+  seasonId               String    @map("season_id")
+  bedId                  String    @map("bed_id")
+  cultivarId             String    @map("cultivar_id")
+  cultureSheetId         String?   @map("culture_sheet_id")
+  sowingDate             DateTime  @map("sowing_date")
+  transplantDate         DateTime? @map("transplant_date")
+  expectedHarvestDate    DateTime? @map("expected_harvest_date")
+  actualFirstHarvestDate DateTime? @map("actual_first_harvest_date")
+  actualLastHarvestDate  DateTime? @map("actual_last_harvest_date")
+  quantityPlanted        Decimal   @default(0) @map("quantity_planted")
+  status                 String    @default("PLANIFIE")
+  successionOrder        Int       @default(1) @map("succession_order")
+  expectedYieldKg        Decimal?  @map("expected_yield_kg")
+  notes                  String?
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  season         Season         @relation(fields: [seasonId], references: [id])
+  bed            Bed            @relation(fields: [bedId], references: [id])
+  cultivar       Cultivar       @relation(fields: [cultivarId], references: [id])
+  cultureSheet   CultureSheet?  @relation(fields: [cultureSheetId], references: [id])
+  tasks          Task[]
+  harvests       Harvest[]
+  nurseryBatches NurseryBatch[]
+  journalEntries JournalEntry[]
+
+  @@map("plantings")
+}
+
+/// Tâche concrète
+/// status: A_FAIRE | EN_COURS | FAIT | REPORTE | ANNULE
+/// priority: BASSE | NORMALE | HAUTE | URGENTE
+model Task {
+  id                  String    @id @default(uuid())
+  plantingId          String?   @map("planting_id")
+  bedId               String?   @map("bed_id")
+  zoneId              String?   @map("zone_id")
+  taskTemplateId      String?   @map("task_template_id")
+  name                String
+  description         String?
+  scheduledDate       DateTime  @map("scheduled_date")
+  completedDate       DateTime? @map("completed_date")
+  actualDurationHours Decimal?  @map("actual_duration_hours")
+  status              String    @default("A_FAIRE")
+  priority            String    @default("NORMALE")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  planting     Planting?     @relation(fields: [plantingId], references: [id])
+  bed          Bed?          @relation(fields: [bedId], references: [id])
+  zone         Zone?         @relation(fields: [zoneId], references: [id])
+  taskTemplate TaskTemplate? @relation(fields: [taskTemplateId], references: [id])
+
+  @@map("tasks")
+}
+
+/// Récolte enregistrée
+model Harvest {
+  id            String   @id @default(uuid())
+  plantingId    String   @map("planting_id")
+  date          DateTime
+  quantityKg    Decimal  @map("quantity_kg")
+  qualityRating Int?     @map("quality_rating")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  planting Planting @relation(fields: [plantingId], references: [id])
+
+  @@map("harvests")
+}
+
+/// Lot de pépinière
+/// containerType: PLAQUE_72 | PLAQUE_104 | PLAQUE_128 | PLAQUE_150 | PLAQUE_200 | PLAQUE_240 | GODET_7..12 | MOTTE | TERRINE | AUTRE
+/// status: SEME | EN_GERMINATION | EN_CROISSANCE | PRET_AU_REPIQUAGE | TRANSPLANTE | ECHEC
+model NurseryBatch {
+  id                     String    @id @default(uuid())
+  plantingId             String?   @map("planting_id")
+  cultivarId             String    @map("cultivar_id")
+  seedInventoryId        String?   @map("seed_inventory_id")
+  seedsConsumed          Int?      @map("seeds_consumed")
+  sowingDate             DateTime  @map("sowing_date")
+  containerType          String    @map("container_type")
+  containerCount         Int       @map("container_count")
+  cellsPerContainer      Int       @map("cells_per_container")
+  totalSeedsSown         Int       @map("total_seeds_sown")
+  germinationCount       Int?      @map("germination_count")
+  germinationRate        Decimal?  @map("germination_rate")
+  plantsReady            Int?      @map("plants_ready")
+  expectedTransplantDate DateTime? @map("expected_transplant_date")
+  actualTransplantDate   DateTime? @map("actual_transplant_date")
+  status                 String    @default("SEME")
+  notes                  String?
+  photos                 String    @default("[]")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  planting      Planting?      @relation(fields: [plantingId], references: [id])
+  cultivar      Cultivar       @relation(fields: [cultivarId], references: [id])
+  seedInventory SeedInventory? @relation(fields: [seedInventoryId], references: [id])
+
+  @@map("nursery_batches")
+}
+
+/// Fournisseur de semences
+model Supplier {
+  id        String   @id @default(uuid())
+  name      String
+  siret     String?
+  email     String?
+  phone     String?
+  website   String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  invoices      Invoice[]
+  seedInventory SeedInventory[]
+
+  @@map("suppliers")
+}
+
+/// Facture d'achat de semences
+model Invoice {
+  id          String    @id @default(uuid())
+  supplierId  String    @map("supplier_id")
+  number      String    @unique
+  date        DateTime?
+  totalAmount Decimal?  @map("total_amount")
+  fileName    String?   @map("file_name")
+  notes       String?
+  importedAt  DateTime  @default(now()) @map("imported_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  supplier Supplier      @relation(fields: [supplierId], references: [id])
+  lines    InvoiceLine[]
+
+  @@map("invoices")
+}
+
+/// Ligne d'une facture (une variété/produit)
+model InvoiceLine {
+  id          String    @id @default(uuid())
+  invoiceId      String    @map("invoice_id")
+  cultivarId     String?   @map("cultivar_id")
+  rawText        String    @map("raw_text")
+  reference      String?
+  description    String?
+  packaging      String?
+  unitType       String?   @map("unit_type")
+  unitQty        Decimal?  @map("unit_qty")
+  quantityG      Decimal?  @map("quantity_g")
+  qtyOrdered     Int?      @map("qty_ordered")
+  unitPrice      Decimal?  @map("unit_price")
+  totalPrice     Decimal?  @map("total_price")
+  tvaRate        Decimal?  @map("tva_rate")
+  lotNumber      String?   @map("lot_number")
+  expiryDate     DateTime? @map("expiry_date")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  invoice  Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  cultivar Cultivar? @relation(fields: [cultivarId], references: [id])
+
+  @@map("invoice_lines")
+}
+
+/// Stock de graines
+model SeedInventory {
+  id              String    @id @default(uuid())
+  cultivarId      String    @map("cultivar_id")
+  supplierId      String?   @map("supplier_id")
+  supplier        String
+  purchaseUrl     String?   @map("purchase_url")
+  unitPriceEuros  Decimal   @map("unit_price_euros")
+  initialQuantity Int       @default(0) @map("initial_quantity")
+  quantityInStock Int       @default(0) @map("quantity_in_stock")
+  lotNumber       String?   @map("lot_number")
+  purchaseDate    DateTime? @map("purchase_date")
+  expiryDate      DateTime? @map("expiry_date")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  cultivar       Cultivar       @relation(fields: [cultivarId], references: [id])
+  supplierRef    Supplier?      @relation(fields: [supplierId], references: [id])
+  nurseryBatches NurseryBatch[]
+
+  @@map("seed_inventory")
+}
+
+/// Données météo quotidiennes (Mormant 48.61°N 2.88°E)
+model WeatherData {
+  id              String   @id @default(uuid())
+  date            DateTime @unique
+  temperatureMax  Decimal  @map("temperature_max")
+  temperatureMin  Decimal  @map("temperature_min")
+  temperatureAvg  Decimal  @map("temperature_avg")
+  precipitationMm Decimal  @map("precipitation_mm")
+  windSpeedMaxKmh Decimal  @map("wind_speed_max_kmh")
+  humidityAvg     Decimal  @map("humidity_avg")
+  sunshineHours   Decimal  @map("sunshine_hours")
+  frost           Boolean  @default(false)
+  rawData         String?  @map("raw_data")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("weather_data")
+}
+
+/// Entrée du journal de bord
+model JournalEntry {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  date       DateTime
+  content    String
+  photos     String   @default("[]")
+  tags       String   @default("[]")
+  plantingId String?  @map("planting_id")
+  bedId      String?  @map("bed_id")
+  zoneId     String?  @map("zone_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id])
+  planting Planting? @relation(fields: [plantingId], references: [id])
+  bed      Bed?      @relation(fields: [bedId], references: [id])
+  zone     Zone?     @relation(fields: [zoneId], references: [id])
+
+  @@map("journal_entries")
+}
+
+/// Photo (référence polymorphe)
+/// entityType: PLANTING | BED | TASK | NURSERY_BATCH | JOURNAL_ENTRY
+model Photo {
+  id            String   @id @default(uuid())
+  filePath      String   @map("file_path")
+  thumbnailPath String?  @map("thumbnail_path")
+  caption       String?
+  takenAt       DateTime @map("taken_at")
+  entityType    String   @map("entity_type")
+  entityId      String   @map("entity_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@map("photos")
+}
+
+/// Paramètres de l'application (clé-valeur)
+model AppSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}

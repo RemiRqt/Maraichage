@@ -1,0 +1,14 @@
+{
+  "name": "malamaraichage",
+  "private": true,
+  "scripts": {
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "cd client && npm ci && VITE_API_URL=/api/v1 npm run build",
+    "build:server": "cd server && npm ci && npx prisma generate",
+    "start": "cd server && npx prisma migrate deploy && node src/server.js",
+    "seed": "cd server && npx prisma db seed"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -107,10 +107,22 @@ app.use(`${API_PREFIX}/calendar`, calendarRoutes);
 app.use(`${API_PREFIX}/suppliers`, supplierRoutes);
 app.use(`${API_PREFIX}/invoices`, invoiceRoutes);
 
-// ---- Gestion des erreurs 404 ----
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route non trouvée' });
-});
+// ---- Health check ----
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+// ---- Servir le frontend React en production ----
+if (process.env.NODE_ENV === 'production') {
+  const clientDistPath = path.join(__dirname, '..', '..', 'client', 'dist');
+  app.use(express.static(clientDistPath));
+  // Fallback SPA : toute route non-API renvoie index.html
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+} else {
+  app.use((req, res) => {
+    res.status(404).json({ error: 'Route non trouvée' });
+  });
+}
 
 // ---- Middleware de gestion d'erreurs centralisé ----
 app.use(errorHandler);

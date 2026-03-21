@@ -22,7 +22,7 @@ function WeatherDay({ day, isToday = false }) {
     <div
       className={[
         'card flex flex-col items-center gap-1.5 p-3 sm:p-4 text-center w-[40%] sm:w-auto flex-shrink-0',
-        isToday ? 'ring-2 ring-[#1B5E20]' : '',
+        isToday ? 'ring-2 ring-green-500 bg-green-50/50' : '',
       ].join(' ')}
       aria-label={`Météo du ${dateLabel}`}
     >
@@ -114,10 +114,7 @@ export default function WeatherWidget() {
 
   return (
     <section aria-label="Météo">
-      <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">
-        Météo
-      </h2>
-      <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+      <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2">
         {today && <WeatherDay day={today} isToday />}
         {forecast.map((day) => (
           <WeatherDay key={day.date} day={day} />

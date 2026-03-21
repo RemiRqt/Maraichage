@@ -39,11 +39,11 @@ function StatCard({ icon: Icon, label, value, subValue, color = 'green' }) {
       <div className={`p-2 sm:p-3 rounded-xl ${colorMap[color] || colorMap.green}`}>
         <Icon className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
       </div>
-      <div className="min-w-0">
+      <div className="flex-1 min-w-0">
         <p className="text-[10px] sm:text-sm text-gray-500 truncate">{label}</p>
-        <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
         {subValue && <p className="text-[10px] sm:text-xs text-gray-400">{subValue}</p>}
       </div>
+      <p className="text-2xl sm:text-3xl font-bold text-gray-900 flex-shrink-0">{value}</p>
     </div>
   );
 }

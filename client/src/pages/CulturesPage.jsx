@@ -228,22 +228,22 @@ export default function CulturesPage() {
       </div>
 
       {/* Filtres */}
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 sm:mb-5">
+      <div className="flex gap-2 mb-3 sm:mb-5">
         <div className="relative flex-1">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
+          <MagnifyingGlassIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher une espèce…"
-            className="form-input pl-9"
+            placeholder="Rechercher…"
+            className="form-input pl-8 text-sm py-1.5 sm:py-2"
             aria-label="Rechercher"
           />
         </div>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="form-input w-auto"
+          className="form-input w-auto text-sm py-1.5 sm:py-2"
           aria-label="Catégorie"
         >
           {CATEGORIES.map((c) => (
@@ -252,14 +252,14 @@ export default function CulturesPage() {
         </select>
         <button
           onClick={() => setOnlyActive(!onlyActive)}
-          className={`px-3 py-2 text-sm font-medium rounded-lg border transition-colors whitespace-nowrap ${
+          className={`px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border transition-colors whitespace-nowrap ${
             onlyActive
               ? 'bg-green-100 text-green-800 border-green-300'
               : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
           }`}
           aria-pressed={onlyActive}
         >
-          En culture ({activeSpeciesIds.size})
+          <span className="hidden sm:inline">En culture</span> ({activeSpeciesIds.size})
         </button>
       </div>
 
@@ -272,7 +272,7 @@ export default function CulturesPage() {
           <p>Aucune espèce trouvée</p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5 sm:space-y-2">
           {filteredSpecies.map((sp) => {
             const isActive = activeSpeciesIds.has(sp.id);
             const isExpanded = expandedId === sp.id;
@@ -284,28 +284,27 @@ export default function CulturesPage() {
                 <button
                   type="button"
                   onClick={() => toggleExpand(sp.id)}
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                  className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 hover:bg-gray-50 transition-colors text-left"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-xl flex-shrink-0">{getSpeciesIcon(sp.name, sp.category)}</span>
-                    {isActive && <span className="w-2.5 h-2.5 rounded-full bg-green-500 flex-shrink-0" title="En culture" />}
-                    <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">{sp.name}</p>
+                  <span className="text-lg sm:text-xl flex-shrink-0">{getSpeciesIcon(sp.name, sp.category)}</span>
+                  {isActive && <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" title="En culture" />}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm sm:text-base font-semibold text-gray-900">{sp.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className={`text-[10px] sm:text-xs font-medium px-1.5 py-0 rounded-full ${CATEGORY_COLORS[sp.category] || 'bg-gray-100 text-gray-600'}`}>
+                        {sp.category}
+                      </span>
+                      <span className="text-[10px] sm:text-xs text-gray-400">{cvs.length} cultivar{cvs.length !== 1 ? 's' : ''}</span>
                       {sp.family && sp.family !== 'À déterminer' && (
-                        <p className="text-xs text-gray-400 italic">{sp.family}</p>
+                        <span className="text-[10px] text-gray-300 italic hidden sm:inline">{sp.family}</span>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[sp.category] || 'bg-gray-100 text-gray-600'}`}>
-                      {sp.category}
-                    </span>
-                    <span className="text-xs text-gray-400">{cvs.length} cultivar{cvs.length !== 1 ? 's' : ''}</span>
-                    {/* Actions espèce */}
-                    <button onClick={(e) => openEditSpecies(sp, e)} className="btn-ghost p-1" aria-label={`Modifier ${sp.name}`}>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button onClick={(e) => openEditSpecies(sp, e)} className="btn-ghost p-1 hidden sm:block" aria-label={`Modifier ${sp.name}`}>
                       <PencilIcon className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
-                    <button onClick={(e) => confirmDelete(sp, 'species', e)} className="btn-ghost p-1 text-red-500" aria-label={`Supprimer ${sp.name}`}>
+                    <button onClick={(e) => confirmDelete(sp, 'species', e)} className="btn-ghost p-1 text-red-500 hidden sm:block" aria-label={`Supprimer ${sp.name}`}>
                       <TrashIcon className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                     {isExpanded ? <ChevronUpIcon className="h-4 w-4 text-gray-400" /> : <ChevronDownIcon className="h-4 w-4 text-gray-400" />}
@@ -325,29 +324,26 @@ export default function CulturesPage() {
                           const cvActive = activeCultivarIds.has(cv.id);
                           const cvPlantings = plantingsByCultivar[cv.id] || [];
                           return (
-                            <div key={cv.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-white transition-colors">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <span className="text-gray-300 pl-4">└</span>
-                                {cvActive && <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" title="En culture" />}
-                                <div className="min-w-0">
-                                  <p className="text-sm font-medium text-gray-800 truncate">{cv.name}</p>
-                                  {cvPlantings.length > 0 && (
-                                    <p className="text-xs text-gray-400">
-                                      {cvPlantings.length} plantation{cvPlantings.length > 1 ? 's' : ''}
-                                      {' — '}
-                                      {cvPlantings.map((p) => p.bed?.name).filter(Boolean).join(', ')}
-                                    </p>
-                                  )}
-                                </div>
+                            <div key={cv.id} className="flex items-center gap-2 px-3 sm:px-4 py-2 hover:bg-white transition-colors">
+                              <span className="text-gray-300 text-xs">└</span>
+                              {cvActive && <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs sm:text-sm font-medium text-gray-800">{cv.name}</p>
+                                {cvPlantings.length > 0 && (
+                                  <p className="text-[10px] sm:text-xs text-gray-400">
+                                    {cvPlantings.length} plantation{cvPlantings.length > 1 ? 's' : ''}
+                                    <span className="hidden sm:inline">{' — '}{cvPlantings.map((p) => p.bed?.name).filter(Boolean).join(', ')}</span>
+                                  </p>
+                                )}
                               </div>
                               <div className="flex items-center gap-1 flex-shrink-0">
                                 {cvActive && (
-                                  <span className="text-xs px-1.5 py-0.5 rounded bg-green-100 text-green-700 mr-1">En culture</span>
+                                  <span className="text-[10px] px-1 py-0 rounded bg-green-100 text-green-700">actif</span>
                                 )}
-                                <button onClick={() => openEditCultivar(cv)} className="btn-ghost p-1" aria-label={`Modifier ${cv.name}`}>
+                                <button onClick={() => openEditCultivar(cv)} className="btn-ghost p-1 hidden sm:block" aria-label={`Modifier ${cv.name}`}>
                                   <PencilIcon className="h-3.5 w-3.5" aria-hidden="true" />
                                 </button>
-                                <button onClick={() => confirmDelete(cv, 'cultivar')} className="btn-ghost p-1 text-red-500" aria-label={`Supprimer ${cv.name}`}>
+                                <button onClick={() => confirmDelete(cv, 'cultivar')} className="btn-ghost p-1 text-red-500 hidden sm:block" aria-label={`Supprimer ${cv.name}`}>
                                   <TrashIcon className="h-3.5 w-3.5" aria-hidden="true" />
                                 </button>
                               </div>

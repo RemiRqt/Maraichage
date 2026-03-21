@@ -145,11 +145,11 @@ export default function DashboardPage() {
       )}
 
       {/* Grille de cartes — 3 colonnes sur grand écran */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
 
         {/* Tâches du jour */}
-        <section className="card p-5" aria-label="Tâches du jour">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-4">
+        <section className="card p-4 sm:p-5" aria-label="Tâches du jour">
+          <h2 className="flex items-center gap-2 text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">
             <span aria-hidden="true">✅</span> Tâches du jour
           </h2>
           {loading ? (
@@ -196,8 +196,8 @@ export default function DashboardPage() {
         </section>
 
         {/* Récoltes à faire */}
-        <section className="card p-5" aria-label="Récoltes à faire">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-4">
+        <section className="card p-4 sm:p-5" aria-label="Récoltes à faire">
+          <h2 className="flex items-center gap-2 text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">
             <span aria-hidden="true">🥬</span> Récoltes à faire
           </h2>
           {loading ? (
@@ -231,8 +231,8 @@ export default function DashboardPage() {
         </section>
 
         {/* Pépinière prête */}
-        <section className="card p-5" aria-label="Pépinière prête au repiquage">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-gray-900 mb-4">
+        <section className="card p-4 sm:p-5" aria-label="Pépinière prête au repiquage">
+          <h2 className="flex items-center gap-2 text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">
             <span aria-hidden="true">🌿</span> Pépinière prête
           </h2>
           {loading ? (

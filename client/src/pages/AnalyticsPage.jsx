@@ -15,6 +15,7 @@ import { Bar } from 'react-chartjs-2';
 import api from '../services/api';
 import { useSeason } from '../context/SeasonContext';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { getSpeciesIcon } from '../utils/speciesIcons';
 
 ChartJS.register(
   CategoryScale,
@@ -29,27 +30,46 @@ ChartJS.register(
 
 const CHART_OPTIONS_BASE = {
   responsive: true,
-  plugins: { legend: { position: 'top' } },
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+  },
   scales: { y: { beginAtZero: true } },
 };
 
 // Carte KPI
-function KpiCard({ label, value, unit = '', icon }) {
+function KpiCard({ label, value, unit = '', icon, color = 'green' }) {
+  const colors = {
+    green: 'bg-green-50 border-green-200',
+    blue: 'bg-blue-50 border-blue-200',
+    orange: 'bg-orange-50 border-orange-200',
+    purple: 'bg-purple-50 border-purple-200',
+  };
   return (
-    <div className="card p-5 flex flex-col gap-1">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+    <div className={`rounded-xl border p-3 sm:p-4 ${colors[color] || colors.green}`}>
+      <p className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1">
         {icon && <span aria-hidden="true">{icon}</span>}
         {label}
       </p>
-      <p className="text-3xl font-bold text-gray-900">
+      <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
         {value !== undefined && value !== null ? value : '–'}
-        {unit && <span className="text-base font-normal text-gray-500 ml-1">{unit}</span>}
+        {unit && <span className="text-xs sm:text-sm font-normal text-gray-500 ml-1">{unit}</span>}
       </p>
     </div>
   );
 }
 
-// Onglet par culture
+// Barre de progression horizontale
+function ProgressBar({ value, max, color = 'bg-green-500' }) {
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
+  return (
+    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
+// ─── Onglet par culture ───────────────────────────────────────────────────────
 function ParCultureTab({ seasonId }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,80 +89,88 @@ function ParCultureTab({ seasonId }) {
     fetch();
   }, [seasonId]);
 
+  const maxKg = Math.max(...data.map((d) => Math.max(d.totalKgRecoltes || 0, d.totalKgPrevus || 0)), 1);
+
   const chartData = {
     labels: data.map((d) => d.cultivar?.name),
     datasets: [
-      {
-        label: 'Récolte réelle (kg)',
-        data: data.map((d) => d.totalKgRecoltes),
-        backgroundColor: '#4ade80',
-        borderRadius: 4,
-      },
-      {
-        label: 'Prévisionnel (kg)',
-        data: data.map((d) => d.totalKgPrevus),
-        backgroundColor: '#86efac',
-        borderRadius: 4,
-      },
+      { label: 'Récolte réelle (kg)', data: data.map((d) => d.totalKgRecoltes), backgroundColor: '#4ade80', borderRadius: 4 },
+      { label: 'Prévisionnel (kg)', data: data.map((d) => d.totalKgPrevus), backgroundColor: '#86efac', borderRadius: 4 },
     ],
   };
 
   if (loading) return <div className="flex justify-center py-12"><LoadingSpinner /></div>;
 
+  if (data.length === 0) {
+    return (
+      <div className="card p-8 text-center text-gray-400">
+        <p className="text-3xl mb-2">📊</p>
+        <p>Aucune donnée pour cette saison</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-5">
-      {data.length > 0 && (
-        <div className="card p-5">
+    <div className="space-y-4">
+      {/* Graphique — masqué mobile, visible tablette+ */}
+      <div className="card p-3 sm:p-5 hidden sm:block">
+        <div style={{ height: '300px' }}>
           <Bar
             data={chartData}
             options={{
               ...CHART_OPTIONS_BASE,
               plugins: {
                 ...CHART_OPTIONS_BASE.plugins,
-                title: { display: true, text: 'Récoltes réelles vs prévisionnelles (kg)' },
+                title: { display: true, text: 'Récoltes réelles vs prévisionnelles (kg)', font: { size: 13 } },
               },
               scales: { y: { beginAtZero: true, title: { display: true, text: 'kg' } } },
             }}
-            aria-label="Graphique des récoltes par culture"
           />
         </div>
-      )}
+      </div>
 
-      <div className="card overflow-hidden">
-        <table className="w-full text-sm" aria-label="Tableau analytique par culture">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Cultivar</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">Récolte (kg)</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">Prévisionnel (kg)</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">Heures</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">Taux réalisation</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((d) => (
-              <tr key={d.cultivar?.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-900">{d.cultivar?.name}</td>
-                <td className="px-4 py-3 text-right">{d.totalKgRecoltes?.toFixed(1)}</td>
-                <td className="px-4 py-3 text-right text-gray-500">{d.totalKgPrevus?.toFixed(1) || '–'}</td>
-                <td className="px-4 py-3 text-right">{d.totalHeuresTravaillees?.toFixed(1) || '–'}</td>
-                <td className="px-4 py-3 text-right">
-                  {d.tauxRendementPct != null && (
-                    <span className={`badge text-xs ${d.tauxRendementPct >= 100 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                      {d.tauxRendementPct}%
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Liste mobile-friendly */}
+      <div className="space-y-2">
+        {data.map((d) => {
+          const taux = d.tauxRendementPct;
+          const speciesName = d.cultivar?.species?.name || d.cultivar?.name;
+          return (
+            <div key={d.cultivar?.id} className="card p-3 sm:p-4">
+              <div className="flex items-center gap-2.5 mb-2">
+                <span className="text-lg">{getSpeciesIcon(speciesName)}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm text-gray-900 truncate">{d.cultivar?.name}</p>
+                  <ProgressBar value={d.totalKgRecoltes || 0} max={maxKg} />
+                </div>
+                {taux != null && (
+                  <span className={`badge text-xs flex-shrink-0 ${taux >= 100 ? 'bg-green-100 text-green-700' : taux >= 50 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                    {taux}%
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-xs text-gray-400">Récolté</p>
+                  <p className="text-sm font-bold text-gray-900">{d.totalKgRecoltes?.toFixed(1) || '–'} <span className="text-xs font-normal text-gray-400">kg</span></p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Prévu</p>
+                  <p className="text-sm font-bold text-gray-500">{d.totalKgPrevus?.toFixed(1) || '–'} <span className="text-xs font-normal text-gray-400">kg</span></p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Heures</p>
+                  <p className="text-sm font-bold text-gray-700">{d.totalHeuresTravaillees?.toFixed(1) || '–'} <span className="text-xs font-normal text-gray-400">h</span></p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// Onglet par planche
+// ─── Onglet par planche ───────────────────────────────────────────────────────
 function ParPlancheTab({ seasonId }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -162,70 +190,77 @@ function ParPlancheTab({ seasonId }) {
     fetch();
   }, [seasonId]);
 
+  const maxKgM2 = Math.max(...data.map((d) => d.kgParM2 || 0), 0.1);
+
   const chartData = {
     labels: data.map((d) => d.bed?.name),
     datasets: [
-      {
-        label: 'Rendement (kg/m²)',
-        data: data.map((d) => d.kgParM2),
-        backgroundColor: '#60a5fa',
-        borderRadius: 4,
-      },
+      { label: 'Rendement (kg/m²)', data: data.map((d) => d.kgParM2), backgroundColor: '#60a5fa', borderRadius: 4 },
     ],
   };
 
   if (loading) return <div className="flex justify-center py-12"><LoadingSpinner /></div>;
 
+  if (data.length === 0) {
+    return (
+      <div className="card p-8 text-center text-gray-400">
+        <p className="text-3xl mb-2">📊</p>
+        <p>Aucune donnée pour cette saison</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-5">
-      {data.length > 0 && (
-        <div className="card p-5">
+    <div className="space-y-4">
+      {/* Graphique — masqué mobile */}
+      <div className="card p-3 sm:p-5 hidden sm:block">
+        <div style={{ height: '300px' }}>
           <Bar
             data={chartData}
             options={{
               ...CHART_OPTIONS_BASE,
               plugins: {
                 ...CHART_OPTIONS_BASE.plugins,
-                title: { display: true, text: 'Rendement par planche (kg/m²)' },
+                title: { display: true, text: 'Rendement par planche (kg/m²)', font: { size: 13 } },
               },
               scales: { y: { beginAtZero: true, title: { display: true, text: 'kg/m²' } } },
             }}
-            aria-label="Graphique du rendement par planche"
           />
         </div>
-      )}
+      </div>
 
-      <div className="card overflow-hidden">
-        <table className="w-full text-sm" aria-label="Tableau analytique par planche">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Planche</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">Rendement (kg/m²)</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">Récolté (kg)</th>
-              <th className="text-right px-4 py-3 font-semibold text-gray-600">Occupation (%)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((d) => (
-              <tr key={d.bed?.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-900">{d.bed?.name}</td>
-                <td className="px-4 py-3 text-right">{d.kgParM2?.toFixed(2) || '–'}</td>
-                <td className="px-4 py-3 text-right">{d.totalKgRecoltes?.toFixed(1) || '–'}</td>
-                <td className="px-4 py-3 text-right">
-                  <span className={`badge text-xs ${d.occupationPct >= 70 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                    {d.occupationPct?.toFixed(0) || 0}%
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Liste mobile-friendly */}
+      <div className="space-y-2">
+        {data.map((d) => {
+          const occ = d.occupationPct || 0;
+          return (
+            <div key={d.bed?.id} className="card p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <p className="font-semibold text-sm text-gray-900">{d.bed?.name}</p>
+                <span className={`badge text-xs ${occ >= 70 ? 'bg-green-100 text-green-700' : occ >= 30 ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'}`}>
+                  {occ.toFixed(0)}% occupé
+                </span>
+              </div>
+              <ProgressBar value={d.kgParM2 || 0} max={maxKgM2} color="bg-blue-500" />
+              <div className="grid grid-cols-2 gap-2 mt-2 text-center">
+                <div>
+                  <p className="text-xs text-gray-400">Rendement</p>
+                  <p className="text-sm font-bold text-blue-700">{d.kgParM2?.toFixed(2) || '–'} <span className="text-xs font-normal text-gray-400">kg/m²</span></p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Total récolté</p>
+                  <p className="text-sm font-bold text-gray-900">{d.totalKgRecoltes?.toFixed(1) || '–'} <span className="text-xs font-normal text-gray-400">kg</span></p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// Onglet saison
+// ─── Onglet saison ────────────────────────────────────────────────────────────
 function SaisonTab({ seasonId }) {
   const [kpis, setKpis] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -250,40 +285,44 @@ function SaisonTab({ seasonId }) {
   if (!kpis) return null;
 
   const top5 = kpis.top5CultivarsParRendement || [];
+  const maxTop = top5.length > 0 ? top5[0].totalKg : 1;
 
   return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <KpiCard label="Total récolté" value={kpis.totalKgRecoltes?.toFixed(1)} unit="kg" icon="🥬" />
-        <KpiCard label="Heures de travail" value={kpis.totalHeuresTravaillees?.toFixed(1)} unit="h" icon="⏱️" />
-        <KpiCard label="Plantations" value={kpis.nombrePlantations} icon="🌱" />
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <KpiCard label="Total récolté" value={kpis.totalKgRecoltes?.toFixed(1)} unit="kg" icon="🥬" color="green" />
+        <KpiCard label="Heures travail" value={kpis.totalHeuresTravaillees?.toFixed(1)} unit="h" icon="⏱️" color="blue" />
+        <KpiCard label="Plantations" value={kpis.nombrePlantations} icon="🌱" color="purple" />
       </div>
 
       {top5.length > 0 && (
-        <div className="card p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">🏆 Top 5 cultivars par rendement</h3>
-          <ul className="space-y-2">
+        <div className="card p-4 sm:p-5">
+          <h3 className="text-xs sm:text-sm font-semibold text-gray-700 mb-3">🏆 Top 5 cultivars</h3>
+          <div className="space-y-2.5">
             {top5.map((c, i) => (
-              <li key={c.cultivarId} className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2">
-                  <span className="text-gray-400 w-5">{i + 1}.</span>
-                  <span className="font-medium text-gray-900">{c.nom}</span>
-                </span>
-                <span className="text-gray-600">{c.totalKg?.toFixed(1)} kg</span>
-              </li>
+              <div key={c.cultivarId}>
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs text-gray-400 w-4 flex-shrink-0">{i + 1}.</span>
+                    <span className="font-medium text-gray-900 truncate">{c.nom}</span>
+                  </span>
+                  <span className="text-gray-600 flex-shrink-0 ml-2">{c.totalKg?.toFixed(1)} kg</span>
+                </div>
+                <ProgressBar value={c.totalKg} max={maxTop} />
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
       {kpis.plantationsParStatut && (
-        <div className="card p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">📊 Plantations par statut</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="card p-4 sm:p-5">
+          <h3 className="text-xs sm:text-sm font-semibold text-gray-700 mb-3">📊 Plantations par statut</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {Object.entries(kpis.plantationsParStatut).map(([status, count]) => (
-              <div key={status} className="text-center p-3 bg-gray-50 rounded-lg">
-                <p className="text-xl font-bold text-gray-900">{count}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{status.replace('_', ' ')}</p>
+              <div key={status} className="text-center p-2.5 bg-gray-50 rounded-lg">
+                <p className="text-lg sm:text-xl font-bold text-gray-900">{count}</p>
+                <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 capitalize">{status.replace(/_/g, ' ').toLowerCase()}</p>
               </div>
             ))}
           </div>
@@ -293,7 +332,7 @@ function SaisonTab({ seasonId }) {
   );
 }
 
-// Onglet comparaison
+// ─── Onglet comparaison ───────────────────────────────────────────────────────
 function ComparaisonTab({ seasons }) {
   const [seasonA, setSeasonA] = useState('');
   const [seasonB, setSeasonB] = useState('');
@@ -322,58 +361,50 @@ function ComparaisonTab({ seasons }) {
   const seasonBName = seasons.find((s) => s.id === seasonB)?.name;
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row gap-3 items-end">
-        <div className="flex-1">
-          <label htmlFor="season-a" className="form-label">Saison A</label>
-          <select
-            id="season-a"
-            value={seasonA}
-            onChange={(e) => setSeasonA(e.target.value)}
-            className="form-input"
-          >
-            <option value="">Choisir une saison…</option>
-            {seasons.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+    <div className="space-y-4">
+      <div className="card p-4">
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label htmlFor="season-a" className="form-label text-xs">Saison A</label>
+            <select id="season-a" value={seasonA} onChange={(e) => setSeasonA(e.target.value)} className="form-input text-sm">
+              <option value="">Choisir…</option>
+              {seasons.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="season-b" className="form-label text-xs">Saison B</label>
+            <select id="season-b" value={seasonB} onChange={(e) => setSeasonB(e.target.value)} className="form-input text-sm">
+              <option value="">Choisir…</option>
+              {seasons.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
         </div>
-        <div className="flex-1">
-          <label htmlFor="season-b" className="form-label">Saison B</label>
-          <select
-            id="season-b"
-            value={seasonB}
-            onChange={(e) => setSeasonB(e.target.value)}
-            className="form-input"
-          >
-            <option value="">Choisir une saison…</option>
-            {seasons.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-        </div>
-        <button onClick={handleCompare} disabled={loading} className="btn-primary">
+        <button onClick={handleCompare} disabled={loading} className="btn-primary w-full text-sm">
           {loading ? 'Comparaison…' : 'Comparer'}
         </button>
       </div>
 
       {comparison && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
             { label: seasonAName, data: comparison.saisonA },
             { label: seasonBName, data: comparison.saisonB },
           ].map(({ label, data }) => (
-            <div key={label} className="card p-5">
-              <h3 className="text-sm font-bold text-gray-800 mb-4">{label}</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Total récolté</span>
-                  <span className="font-semibold">{data?.totalKgRecoltes?.toFixed(1)} kg</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Heures de travail</span>
-                  <span className="font-semibold">{data?.totalHeuresTravaillees?.toFixed(1)} h</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Plantations</span>
-                  <span className="font-semibold">{data?.nombrePlantations ?? '–'}</span>
-                </div>
+            <div key={label} className="card p-4">
+              <h3 className="text-sm font-bold text-gray-800 mb-3">{label}</h3>
+              <div className="space-y-2">
+                {[
+                  { l: 'Total récolté', v: data?.totalKgRecoltes?.toFixed(1), u: 'kg', icon: '🥬' },
+                  { l: 'Heures de travail', v: data?.totalHeuresTravaillees?.toFixed(1), u: 'h', icon: '⏱️' },
+                  { l: 'Plantations', v: data?.nombrePlantations, u: '', icon: '🌱' },
+                ].map((row) => (
+                  <div key={row.l} className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500 flex items-center gap-1.5">
+                      <span className="text-xs">{row.icon}</span> {row.l}
+                    </span>
+                    <span className="font-semibold text-gray-900">{row.v ?? '–'} {row.u}</span>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
@@ -384,24 +415,24 @@ function ComparaisonTab({ seasons }) {
 }
 
 const TABS = [
-  { id: 'culture', label: 'Par culture' },
-  { id: 'planche', label: 'Par planche' },
   { id: 'saison', label: 'Saison' },
-  { id: 'comparaison', label: 'Comparaison' },
+  { id: 'culture', label: 'Cultures' },
+  { id: 'planche', label: 'Planches' },
+  { id: 'comparaison', label: 'Comparer' },
 ];
 
 export default function AnalyticsPage() {
   const { activeSeason, seasons } = useSeason();
-  const [activeTab, setActiveTab] = useState('culture');
+  const [activeTab, setActiveTab] = useState('saison');
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
-      <div className="page-header mb-4 sm:mb-6">
+    <div className="p-3 sm:p-4 md:p-6 max-w-5xl mx-auto">
+      <div className="page-header mb-4 sm:mb-5">
         <h1 className="page-title text-lg sm:text-xl">📊 Analytique</h1>
       </div>
 
       <div
-        className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-4 sm:mb-6 w-full sm:w-fit overflow-x-auto"
+        className="flex gap-0.5 p-1 bg-gray-100 rounded-xl mb-4 sm:mb-5 w-full sm:w-fit"
         role="tablist"
         aria-label="Onglets analytique"
       >
@@ -412,7 +443,7 @@ export default function AnalyticsPage() {
             aria-selected={activeTab === tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={[
-              'px-4 py-2 text-sm font-medium rounded-lg transition-all whitespace-nowrap',
+              'flex-1 sm:flex-none px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-all whitespace-nowrap',
               activeTab === tab.id
                 ? 'bg-white text-[#1B5E20] shadow-sm'
                 : 'text-gray-600 hover:text-gray-900',

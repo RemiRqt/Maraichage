@@ -495,26 +495,34 @@ function PrevisionnelTab({ seasonId }) {
         </div>
       </div>
 
-      {/* Mini timeline des semaines */}
-      <div className="card p-3 overflow-x-auto">
-        <div className="flex gap-1 min-w-max">
+      {/* Timeline des semaines */}
+      <div className="card p-3 sm:p-4">
+        <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-13 gap-1 sm:gap-1.5">
           {forecast.weeks.map((w, idx) => {
             const hasItems = w.items.length > 0;
             const isCurrent = idx === currentWeekIdx;
             const maxWeekKg = Math.max(...forecast.weeks.map((wk) => wk.totalKg), 1);
-            const barH = hasItems ? Math.max(4, Math.round((w.totalKg / maxWeekKg) * 32)) : 2;
+            const barH = hasItems ? Math.max(6, Math.round((w.totalKg / maxWeekKg) * 28)) : 2;
 
             return (
               <button
                 key={idx}
                 onClick={() => setCurrentWeekIdx(idx)}
-                className={`flex flex-col items-center gap-1 px-1.5 py-1 rounded transition-colors min-w-[36px] ${isCurrent ? 'bg-green-100' : hasItems ? 'hover:bg-gray-50' : 'opacity-30'}`}
+                className={[
+                  'flex flex-col items-center gap-0.5 py-1.5 rounded-lg transition-colors',
+                  isCurrent ? 'bg-green-100 ring-1 ring-green-400' : hasItems ? 'hover:bg-gray-100' : 'opacity-25',
+                ].join(' ')}
                 title={`${w.sublabel} — ${w.totalKg.toFixed(1)} kg`}
               >
-                <div className="w-4 bg-gray-100 rounded-sm overflow-hidden flex items-end" style={{ height: '32px' }}>
+                <div className="w-5 bg-gray-100 rounded-sm overflow-hidden flex items-end" style={{ height: '28px' }}>
                   <div className={`w-full rounded-sm ${isCurrent ? 'bg-green-600' : 'bg-green-400'}`} style={{ height: `${barH}px` }} />
                 </div>
-                <span className={`text-[9px] ${isCurrent ? 'font-bold text-green-800' : 'text-gray-400'}`}>{w.label}</span>
+                <span className={`text-[10px] leading-tight ${isCurrent ? 'font-bold text-green-800' : 'text-gray-500'}`}>{w.label}</span>
+                {hasItems && (
+                  <span className={`text-[8px] leading-none ${isCurrent ? 'text-green-600 font-semibold' : 'text-gray-400'}`}>
+                    {w.totalKg.toFixed(0)}kg
+                  </span>
+                )}
               </button>
             );
           })}

@@ -8,16 +8,22 @@ import {
   PencilIcon,
   TrashIcon,
   DocumentArrowDownIcon,
+  EyeIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { getSpeciesIcon } from '../utils/speciesIcons';
+
+// URL de base du serveur (sans /api/v1)
+const SERVER_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1').replace(/\/api\/v1$/, '');
 
 const TABS = [
-  { key: 'info', label: 'Informations' },
   { key: 'invoices', label: 'Factures' },
   { key: 'stock', label: 'Stock lié' },
+  { key: 'info', label: 'Informations' },
 ];
 
 // ─── Onglet informations ──────────────────────────────────────────────────────
@@ -68,9 +74,42 @@ function InfoTab({ supplier, onEdit }) {
   );
 }
 
+// ─── Visionneuse PDF intégrée ─────────────────────────────────────────────────
+function PdfViewer({ fileName, onClose }) {
+  const pdfUrl = `${SERVER_URL}/uploads/invoices/${fileName}`;
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <span className="font-semibold text-gray-800 text-sm truncate">{fileName}</span>
+          <div className="flex items-center gap-2">
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-ghost text-xs px-2 py-1 flex items-center gap-1"
+            >
+              <DocumentArrowDownIcon className="h-3.5 w-3.5" /> Télécharger
+            </a>
+            <button onClick={onClose} className="btn-ghost p-1.5">
+              <XMarkIcon className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+        <iframe
+          src={pdfUrl}
+          className="flex-1 w-full"
+          title="Facture PDF"
+        />
+      </div>
+    </div>
+  );
+}
+
 // ─── Onglet factures ──────────────────────────────────────────────────────────
-function InvoicesTab({ invoices, supplierId, onDeleteInvoice }) {
+function InvoicesTab({ invoices, onDeleteInvoice }) {
   const [expanded, setExpanded] = useState(null);
+  const [viewingPdf, setViewingPdf] = useState(null);
 
   if (invoices.length === 0) {
     return (
@@ -83,101 +122,104 @@ function InvoicesTab({ invoices, supplierId, onDeleteInvoice }) {
   }
 
   return (
-    <div className="space-y-3">
-      {invoices.map((inv) => (
-        <div key={inv.id} className="card p-4">
-          {/* En-tête facture */}
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-gray-900">N° {inv.number}</span>
-                {inv.date && (
-                  <span className="text-xs text-gray-500">
-                    {format(parseISO(inv.date.split('T')[0]), 'd MMMM yyyy', { locale: fr })}
+    <>
+      <div className="space-y-3">
+        {invoices.map((inv) => (
+          <div key={inv.id} className="card overflow-hidden">
+            {/* En-tête facture */}
+            <div className="flex items-start justify-between gap-3 p-4">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-semibold text-gray-900">N° {inv.number}</span>
+                  {inv.date && (
+                    <span className="text-xs text-gray-500">
+                      {format(parseISO(inv.date.split('T')[0]), 'd MMMM yyyy', { locale: fr })}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {inv.lines?.length || 0} ligne{(inv.lines?.length || 0) !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {inv.totalAmount != null && (
+                  <span className="font-bold text-green-700 text-lg">
+                    {parseFloat(inv.totalAmount).toFixed(2)} €
                   </span>
                 )}
                 {inv.fileName && (
-                  <a
-                    href={`http://localhost:3001/uploads/invoices/${inv.fileName}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                  <button
+                    onClick={() => setViewingPdf(inv.fileName)}
+                    className="btn-ghost text-xs py-1 px-2 flex items-center gap-1 text-blue-600"
+                    title="Voir le PDF"
                   >
-                    <DocumentArrowDownIcon className="h-3.5 w-3.5" /> PDF
-                  </a>
+                    <EyeIcon className="h-4 w-4" /> PDF
+                  </button>
                 )}
+                <button
+                  onClick={() => setExpanded(expanded === inv.id ? null : inv.id)}
+                  className="btn-ghost text-xs py-1 px-2"
+                >
+                  {expanded === inv.id ? '▲ Masquer' : '▼ Détails'}
+                </button>
+                <button
+                  onClick={() => onDeleteInvoice(inv)}
+                  className="btn-ghost p-1.5 text-red-500"
+                  aria-label="Supprimer la facture"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                </button>
               </div>
-              <p className="text-xs text-gray-400 mt-0.5">
-                Importée le {format(parseISO(inv.importedAt.split('T')[0]), 'd MMM yyyy', { locale: fr })}
-                {' · '}{inv.lines?.length || 0} ligne{(inv.lines?.length || 0) !== 1 ? 's' : ''}
-              </p>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {inv.totalAmount != null && (
-                <span className="font-semibold text-green-700">
-                  {parseFloat(inv.totalAmount).toFixed(2)} €
-                </span>
-              )}
-              <button
-                onClick={() => setExpanded(expanded === inv.id ? null : inv.id)}
-                className="btn-ghost text-xs py-1 px-2"
-              >
-                {expanded === inv.id ? '▲ Masquer' : '▼ Lignes'}
-              </button>
-              <button
-                onClick={() => onDeleteInvoice(inv)}
-                className="btn-ghost p-1.5 text-red-500"
-                aria-label="Supprimer la facture"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
 
-          {/* Lignes de facture */}
-          {expanded === inv.id && inv.lines?.length > 0 && (
-            <div className="mt-3 border-t border-gray-100 pt-3">
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="text-gray-500 border-b border-gray-100">
-                      <th className="text-left pb-2 font-medium">Réf.</th>
-                      <th className="text-left pb-2 font-medium">Produit</th>
-                      <th className="text-left pb-2 font-medium">Conditionnement</th>
-                      <th className="text-right pb-2 font-medium">Qté cmd.</th>
-                      <th className="text-right pb-2 font-medium">Prix U.</th>
-                      <th className="text-right pb-2 font-medium">Total</th>
-                      <th className="text-left pb-2 font-medium">Cultivar</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inv.lines.map((line) => (
-                      <tr key={line.id} className="border-b border-gray-50 hover:bg-gray-50">
-                        <td className="py-1.5 pr-2 font-mono text-gray-400">{line.reference || '—'}</td>
-                        <td className="py-1.5 pr-2 font-medium text-gray-800 max-w-[200px] truncate">
-                          {line.description || line.rawText}
-                        </td>
-                        <td className="py-1.5 pr-2 text-gray-500">{line.packaging || '—'}</td>
-                        <td className="py-1.5 pr-2 text-right text-gray-700">{line.qtyOrdered ?? '—'}</td>
-                        <td className="py-1.5 pr-2 text-right text-gray-700">
-                          {line.unitPrice != null ? `${parseFloat(line.unitPrice).toFixed(2)} €` : '—'}
-                        </td>
-                        <td className="py-1.5 pr-2 text-right font-medium text-green-700">
-                          {line.totalPrice != null ? `${parseFloat(line.totalPrice).toFixed(2)} €` : '—'}
-                        </td>
-                        <td className="py-1.5 text-purple-700">
-                          {line.cultivar ? line.cultivar.name : <span className="text-gray-300 italic">non associé</span>}
-                        </td>
+            {/* Lignes de facture */}
+            {expanded === inv.id && inv.lines?.length > 0 && (
+              <div className="border-t border-gray-100">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-gray-500 bg-gray-50">
+                        <th className="text-left px-4 py-2 font-medium">Réf.</th>
+                        <th className="text-left px-4 py-2 font-medium">Produit</th>
+                        <th className="text-left px-4 py-2 font-medium">Conditionnement</th>
+                        <th className="text-right px-4 py-2 font-medium">Qté cmd.</th>
+                        <th className="text-right px-4 py-2 font-medium">Prix U.</th>
+                        <th className="text-right px-4 py-2 font-medium">Total</th>
+                        <th className="text-left px-4 py-2 font-medium">Cultivar</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {inv.lines.map((line) => (
+                        <tr key={line.id} className="border-t border-gray-50 hover:bg-gray-50">
+                          <td className="px-4 py-2 font-mono text-gray-400">{line.reference || '—'}</td>
+                          <td className="px-4 py-2 font-medium text-gray-800 max-w-[200px] truncate">
+                            {line.description || line.rawText}
+                          </td>
+                          <td className="px-4 py-2 text-gray-500">{line.packaging || '—'}</td>
+                          <td className="px-4 py-2 text-right text-gray-700">{line.qtyOrdered ?? '—'}</td>
+                          <td className="px-4 py-2 text-right text-gray-700">
+                            {line.unitPrice != null ? `${parseFloat(line.unitPrice).toFixed(2)} €` : '—'}
+                          </td>
+                          <td className="px-4 py-2 text-right font-medium text-green-700">
+                            {line.totalPrice != null ? `${parseFloat(line.totalPrice).toFixed(2)} €` : '—'}
+                          </td>
+                          <td className="px-4 py-2 text-purple-700">
+                            {line.cultivar ? line.cultivar.name : <span className="text-gray-300 italic">non associé</span>}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Visionneuse PDF */}
+      {viewingPdf && <PdfViewer fileName={viewingPdf} onClose={() => setViewingPdf(null)} />}
+    </>
   );
 }
 
@@ -205,20 +247,58 @@ function StockTab({ supplierId }) {
   }
 
   return (
-    <div className="space-y-2">
-      {stock.map((s) => (
-        <div key={s.id} className="card p-3 flex items-center justify-between gap-4">
-          <div>
-            <p className="font-medium text-sm text-gray-800">{s.cultivar?.name || '—'}</p>
-            <p className="text-xs text-gray-500">{s.cultivar?.species?.name || ''}</p>
-          </div>
-          <div className="flex gap-4 text-xs text-gray-500 flex-shrink-0">
-            {s.weightGrams != null && <span>{parseFloat(s.weightGrams)}g</span>}
-            {s.unitPriceEuros != null && <span>{parseFloat(s.unitPriceEuros).toFixed(2)} €</span>}
-            {s.purchaseDate && <span>{format(parseISO(s.purchaseDate.split('T')[0]), 'dd/MM/yyyy')}</span>}
-          </div>
-        </div>
-      ))}
+    <div className="card overflow-hidden">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            <th className="text-left px-4 py-3 font-semibold text-gray-600">Cultivar</th>
+            <th className="text-left px-4 py-3 font-semibold text-gray-600">Espèce</th>
+            <th className="text-right px-4 py-3 font-semibold text-gray-600">Stock</th>
+            <th className="text-right px-4 py-3 font-semibold text-gray-600">Qté initiale</th>
+            <th className="text-right px-4 py-3 font-semibold text-gray-600">Prix</th>
+            <th className="text-left px-4 py-3 font-semibold text-gray-600">Lot</th>
+            <th className="text-left px-4 py-3 font-semibold text-gray-600">Achat</th>
+            <th className="text-left px-4 py-3 font-semibold text-gray-600">Expiration</th>
+          </tr>
+        </thead>
+        <tbody>
+          {stock.map((s) => {
+            const pct = s.initial_quantity > 0 ? Math.round((s.quantity / s.initial_quantity) * 100) : null;
+            return (
+              <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{getSpeciesIcon(s.species_name)}</span>
+                    <span className="font-medium text-gray-900">{s.cultivar_name || '—'}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-gray-500">{s.species_name || '—'}</td>
+                <td className="px-4 py-3 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <span className="font-semibold text-gray-900">{s.quantity}</span>
+                    {pct !== null && (
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${pct > 50 ? 'bg-green-100 text-green-700' : pct > 20 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                        {pct}%
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-right text-gray-500">{s.initial_quantity}</td>
+                <td className="px-4 py-3 text-right text-gray-700">
+                  {s.unit_price != null ? `${parseFloat(s.unit_price).toFixed(2)} €` : '—'}
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-500 font-mono">{s.lot_number || '—'}</td>
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  {s.purchase_date ? format(parseISO(s.purchase_date.split('T')[0]), 'dd/MM/yy') : '—'}
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-500">
+                  {s.expiry_date ? format(parseISO(s.expiry_date.split('T')[0]), 'dd/MM/yy') : '—'}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -322,34 +402,42 @@ export default function SupplierDetailPage() {
   if (!supplier) return null;
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 max-w-5xl mx-auto">
       {/* En-tête */}
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate('/fournisseurs')} className="btn-ghost p-2">
           <ArrowLeftIcon className="h-5 w-5" />
         </button>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">{supplier.name}</h1>
-          {supplier.email && <p className="text-sm text-gray-500">{supplier.email}</p>}
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl font-bold text-gray-900 truncate">{supplier.name}</h1>
+          <div className="flex flex-wrap gap-3 text-sm text-gray-500 mt-0.5">
+            {supplier.email && <span>{supplier.email}</span>}
+            {supplier.phone && <span>{supplier.phone}</span>}
+          </div>
         </div>
+        <button onClick={() => setEditOpen(true)} className="btn-ghost flex items-center gap-1.5 text-sm flex-shrink-0">
+          <PencilIcon className="h-4 w-4" /> Modifier
+        </button>
       </div>
 
       {/* Onglets */}
-      <div className="flex gap-1 border-b border-gray-200 mb-6">
+      <div className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-5 w-full sm:w-fit" role="tablist">
         {TABS.map((tab) => (
           <button
             key={tab.key}
+            role="tab"
+            aria-selected={activeTab === tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={[
-              'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors',
+              'px-4 py-2 text-sm font-medium rounded-lg transition-all',
               activeTab === tab.key
-                ? 'border-green-700 text-green-700'
-                : 'border-transparent text-gray-500 hover:text-gray-700',
+                ? 'bg-white text-[#1B5E20] shadow-sm'
+                : 'text-gray-600 hover:text-gray-900',
             ].join(' ')}
           >
             {tab.label}
             {tab.key === 'invoices' && (
-              <span className="ml-1.5 text-xs bg-gray-100 text-gray-600 rounded-full px-1.5 py-0.5">
+              <span className="ml-1.5 text-xs text-gray-400">
                 {supplier.invoices?.length || 0}
               </span>
             )}
@@ -364,7 +452,6 @@ export default function SupplierDetailPage() {
       {activeTab === 'invoices' && (
         <InvoicesTab
           invoices={supplier.invoices || []}
-          supplierId={supplierId}
           onDeleteInvoice={setDeleteInvoiceTarget}
         />
       )}

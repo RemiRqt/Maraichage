@@ -7,10 +7,11 @@ const prisma = require('../utils/prisma');
 // GET / — Liste le stock de semences avec cultivar et espèce
 const list = async (req, res, next) => {
   try {
-    const { cultivar_id, supplier } = req.query;
+    const { cultivar_id, supplier, supplier_id } = req.query;
 
     const where = {};
     if (cultivar_id) where.cultivarId = cultivar_id;
+    if (supplier_id) where.supplierId = supplier_id;
     if (supplier) where.supplier = { contains: supplier, mode: 'insensitive' };
 
     const seeds = await prisma.seedInventory.findMany({

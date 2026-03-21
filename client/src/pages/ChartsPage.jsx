@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import { MagnifyingGlassIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, ChevronDownIcon, ChevronUpIcon, PencilIcon, CheckIcon, XMarkIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import Modal from '../components/ui/Modal';
 import { getSpeciesIcon } from '../utils/speciesIcons';
 
 // Badge coloré pour la méthode de semis
@@ -26,7 +27,7 @@ function SowingBadge({ method }) {
 }
 
 // Section dépliable
-function Section({ title, icon, children, defaultOpen = false }) {
+function Section({ title, icon, children, defaultOpen = false, onEdit, editing }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border-t border-gray-100">
@@ -38,7 +39,21 @@ function Section({ title, icon, children, defaultOpen = false }) {
         <span className="flex items-center gap-2">
           <span aria-hidden="true">{icon}</span> {title}
         </span>
-        {open ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
+        <div className="flex items-center gap-2">
+          {onEdit && !editing && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onEdit(); }}}
+              className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-green-700 transition-colors"
+              title="Modifier"
+            >
+              <PencilIcon className="h-3.5 w-3.5" />
+            </span>
+          )}
+          {open ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
+        </div>
       </button>
       {open && <div className="px-4 pb-4">{children}</div>}
     </div>
@@ -59,10 +74,287 @@ function DataRow({ label, value, unit }) {
   );
 }
 
+// Champ de formulaire inline
+function Field({ label, value, onChange, type = 'number', step, unit, placeholder, required }) {
+  return (
+    <div>
+      <label className="block text-xs text-gray-500 mb-0.5">{label}{required && ' *'}</label>
+      <div className="flex items-center gap-1">
+        <input
+          type={type}
+          value={value ?? ''}
+          onChange={(e) => onChange(type === 'number' ? (e.target.value === '' ? null : Number(e.target.value)) : e.target.value)}
+          step={step || (type === 'number' ? 'any' : undefined)}
+          className="form-input text-sm py-1.5"
+          placeholder={placeholder}
+          required={required}
+        />
+        {unit && <span className="text-xs text-gray-400 flex-shrink-0">{unit}</span>}
+      </div>
+    </div>
+  );
+}
+
+// Boutons sauvegarder / annuler
+function FormActions({ onSave, onCancel, saving }) {
+  return (
+    <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-gray-100">
+      <button type="button" onClick={onCancel} className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1">
+        <XMarkIcon className="h-3.5 w-3.5" /> Annuler
+      </button>
+      <button type="button" onClick={onSave} disabled={saving} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
+        <CheckIcon className="h-3.5 w-3.5" /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+      </button>
+    </div>
+  );
+}
+
+// Formulaire pépinière
+function NurseryChartForm({ data, onSave, onCancel, onDelete, saving }) {
+  const [form, setForm] = useState({
+    containerType: data?.containerType || '',
+    seedsPerCell: data?.seedsPerCell ?? 1,
+    technique: data?.technique || '',
+    germinationDays: data?.germinationDays ?? '',
+    germinationTempC: data?.germinationTempC ?? '',
+  });
+  const [repotStages, setRepotStages] = useState(
+    data?.repotStages?.map((s) => ({ stageNumber: s.stageNumber, containerType: s.containerType, daysAfterSowing: s.daysAfterSowing })) || []
+  );
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  return (
+    <div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Contenant" value={form.containerType} onChange={(v) => set('containerType', v)} type="text" required />
+        <Field label="Graines / cellule" value={form.seedsPerCell} onChange={(v) => set('seedsPerCell', v)} required />
+        <Field label="Technique" value={form.technique} onChange={(v) => set('technique', v)} type="text" />
+        <Field label="Jours germination" value={form.germinationDays} onChange={(v) => set('germinationDays', v)} unit="j" required />
+        <Field label="Temp. germination" value={form.germinationTempC} onChange={(v) => set('germinationTempC', v)} unit="°C" />
+      </div>
+      {/* Rempotages */}
+      <div className="mt-3">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase">Rempotages</p>
+          <button type="button" onClick={() => setRepotStages((s) => [...s, { stageNumber: s.length + 1, containerType: '', daysAfterSowing: '' }])} className="text-xs text-green-700 hover:underline flex items-center gap-0.5">
+            <PlusIcon className="h-3 w-3" /> Ajouter
+          </button>
+        </div>
+        {repotStages.map((s, i) => (
+          <div key={i} className="flex items-center gap-2 mb-1.5">
+            <span className="w-5 h-5 flex items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold flex-shrink-0">{i + 1}</span>
+            <input type="text" value={s.containerType} onChange={(e) => { const arr = [...repotStages]; arr[i].containerType = e.target.value; setRepotStages(arr); }} className="form-input text-sm py-1 flex-1" placeholder="Contenant" />
+            <input type="number" value={s.daysAfterSowing} onChange={(e) => { const arr = [...repotStages]; arr[i].daysAfterSowing = Number(e.target.value); setRepotStages(arr); }} className="form-input text-sm py-1 w-20" placeholder="Jours" />
+            <span className="text-xs text-gray-400">j</span>
+            <button type="button" onClick={() => setRepotStages((arr) => arr.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 p-0.5">
+              <TrashIcon className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+        {data && onDelete && (
+          <button type="button" onClick={onDelete} className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
+            <TrashIcon className="h-3.5 w-3.5" /> Supprimer la charte
+          </button>
+        )}
+        <div className="flex gap-2 ml-auto">
+          <button type="button" onClick={onCancel} className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1">
+            <XMarkIcon className="h-3.5 w-3.5" /> Annuler
+          </button>
+          <button type="button" onClick={() => onSave({ ...form, repotStages })} disabled={saving} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
+            <CheckIcon className="h-3.5 w-3.5" /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Formulaire transplantation
+function TransplantChartForm({ data, onSave, onCancel, onDelete, saving }) {
+  const [form, setForm] = useState({
+    rowCount: data?.rowCount ?? '',
+    rowSpacingCm: data?.rowSpacingCm ? parseFloat(data.rowSpacingCm) : '',
+    plantSpacingCm: data?.plantSpacingCm ? parseFloat(data.plantSpacingCm) : '',
+    nurseryDurationDays: data?.nurseryDurationDays ?? '',
+    daysToMaturity: data?.daysToMaturity ?? '',
+    harvestWindowDays: data?.harvestWindowDays ?? '',
+    sowWeekStart: data?.sowWeekStart ?? '',
+    sowWeekEnd: data?.sowWeekEnd ?? '',
+    safetyMarginPct: data?.safetyMarginPct ?? '',
+    plantsPerM2: data?.plantsPerM2 ? parseFloat(data.plantsPerM2) : '',
+    plantsPerM2WithMargin: data?.plantsPerM2WithMargin ? parseFloat(data.plantsPerM2WithMargin) : '',
+  });
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  return (
+    <div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <Field label="Nb rangs" value={form.rowCount} onChange={(v) => set('rowCount', v)} required />
+        <Field label="Espacement rangs" value={form.rowSpacingCm} onChange={(v) => set('rowSpacingCm', v)} unit="cm" required />
+        <Field label="Espacement plants" value={form.plantSpacingCm} onChange={(v) => set('plantSpacingCm', v)} unit="cm" required />
+        <Field label="Durée pépinière" value={form.nurseryDurationDays} onChange={(v) => set('nurseryDurationDays', v)} unit="j" />
+        <Field label="JAM" value={form.daysToMaturity} onChange={(v) => set('daysToMaturity', v)} unit="j" required />
+        <Field label="Fenêtre récolte" value={form.harvestWindowDays} onChange={(v) => set('harvestWindowDays', v)} unit="j" required />
+        <Field label="Semaine début" value={form.sowWeekStart} onChange={(v) => set('sowWeekStart', v)} />
+        <Field label="Semaine fin" value={form.sowWeekEnd} onChange={(v) => set('sowWeekEnd', v)} />
+        <Field label="Marge sécurité" value={form.safetyMarginPct} onChange={(v) => set('safetyMarginPct', v)} unit="%" />
+        <Field label="Plants / m²" value={form.plantsPerM2} onChange={(v) => set('plantsPerM2', v)} />
+        <Field label="Plants / m² (+ marge)" value={form.plantsPerM2WithMargin} onChange={(v) => set('plantsPerM2WithMargin', v)} />
+      </div>
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+        {data && onDelete && (
+          <button type="button" onClick={onDelete} className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
+            <TrashIcon className="h-3.5 w-3.5" /> Supprimer la charte
+          </button>
+        )}
+        <div className="flex gap-2 ml-auto">
+          <button type="button" onClick={onCancel} className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1">
+            <XMarkIcon className="h-3.5 w-3.5" /> Annuler
+          </button>
+          <button type="button" onClick={() => onSave(form)} disabled={saving} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
+            <CheckIcon className="h-3.5 w-3.5" /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Formulaire semis direct
+function DirectSowChartForm({ data, onSave, onCancel, onDelete, saving }) {
+  const [form, setForm] = useState({
+    rowCount: data?.rowCount ?? '',
+    rowSpacingCm: data?.rowSpacingCm ? parseFloat(data.rowSpacingCm) : '',
+    daysToMaturity: data?.daysToMaturity ?? '',
+    harvestWindowDays: data?.harvestWindowDays ?? '',
+    safetyMarginPct: data?.safetyMarginPct ?? '',
+    sowWeekStart: data?.sowWeekStart ?? '',
+    sowWeekEnd: data?.sowWeekEnd ?? '',
+  });
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  return (
+    <div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <Field label="Nb rangs" value={form.rowCount} onChange={(v) => set('rowCount', v)} required />
+        <Field label="Espacement rangs" value={form.rowSpacingCm} onChange={(v) => set('rowSpacingCm', v)} unit="cm" required />
+        <Field label="JAM" value={form.daysToMaturity} onChange={(v) => set('daysToMaturity', v)} unit="j" required />
+        <Field label="Fenêtre récolte" value={form.harvestWindowDays} onChange={(v) => set('harvestWindowDays', v)} unit="j" required />
+        <Field label="Marge sécurité" value={form.safetyMarginPct} onChange={(v) => set('safetyMarginPct', v)} unit="%" />
+        <Field label="Semaine début" value={form.sowWeekStart} onChange={(v) => set('sowWeekStart', v)} />
+        <Field label="Semaine fin" value={form.sowWeekEnd} onChange={(v) => set('sowWeekEnd', v)} />
+      </div>
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+        {data && onDelete && (
+          <button type="button" onClick={onDelete} className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
+            <TrashIcon className="h-3.5 w-3.5" /> Supprimer la charte
+          </button>
+        )}
+        <div className="flex gap-2 ml-auto">
+          <button type="button" onClick={onCancel} className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1">
+            <XMarkIcon className="h-3.5 w-3.5" /> Annuler
+          </button>
+          <button type="button" onClick={() => onSave(form)} disabled={saving} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
+            <CheckIcon className="h-3.5 w-3.5" /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Formulaire rendement
+function YieldChartForm({ data, onSave, onCancel, onDelete, saving }) {
+  const [form, setForm] = useState({
+    saleUnit: data?.saleUnit || '',
+    weightPerUnitG: data?.weightPerUnitG ? parseFloat(data.weightPerUnitG) : '',
+    pricePerUnit: data?.pricePerUnit ? parseFloat(data.pricePerUnit) : '',
+    yieldQtyPer30m: data?.yieldQtyPer30m ? parseFloat(data.yieldQtyPer30m) : '',
+    yieldKgPer30m: data?.yieldKgPer30m ? parseFloat(data.yieldKgPer30m) : '',
+    revenuePer30m: data?.revenuePer30m ? parseFloat(data.revenuePer30m) : '',
+    harvestDays: data?.harvestDays ?? '',
+    revenuePerDayPerM: data?.revenuePerDayPerM ? parseFloat(data.revenuePerDayPerM) : '',
+    yieldKgPerDayPerM: data?.yieldKgPerDayPerM ? parseFloat(data.yieldKgPerDayPerM) : '',
+    harvestsPerWeek: data?.harvestsPerWeek ? parseFloat(data.harvestsPerWeek) : '',
+  });
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  return (
+    <div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <Field label="Unité de vente" value={form.saleUnit} onChange={(v) => set('saleUnit', v)} type="text" required />
+        <Field label="Poids / unité" value={form.weightPerUnitG} onChange={(v) => set('weightPerUnitG', v)} unit="g" />
+        <Field label="Prix / unité" value={form.pricePerUnit} onChange={(v) => set('pricePerUnit', v)} unit="€" />
+        <Field label="Rendement / 30m" value={form.yieldQtyPer30m} onChange={(v) => set('yieldQtyPer30m', v)} unit="unités" />
+        <Field label="Rendement / 30m" value={form.yieldKgPer30m} onChange={(v) => set('yieldKgPer30m', v)} unit="kg" />
+        <Field label="Revenu / 30m" value={form.revenuePer30m} onChange={(v) => set('revenuePer30m', v)} unit="€" />
+        <Field label="Jours de récolte" value={form.harvestDays} onChange={(v) => set('harvestDays', v)} unit="j" />
+        <Field label="€ / jour / m" value={form.revenuePerDayPerM} onChange={(v) => set('revenuePerDayPerM', v)} />
+        <Field label="Kg / jour / m" value={form.yieldKgPerDayPerM} onChange={(v) => set('yieldKgPerDayPerM', v)} />
+        <Field label="Récoltes / semaine" value={form.harvestsPerWeek} onChange={(v) => set('harvestsPerWeek', v)} />
+      </div>
+      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+        {data && onDelete && (
+          <button type="button" onClick={onDelete} className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1">
+            <TrashIcon className="h-3.5 w-3.5" /> Supprimer la charte
+          </button>
+        )}
+        <div className="flex gap-2 ml-auto">
+          <button type="button" onClick={onCancel} className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1">
+            <XMarkIcon className="h-3.5 w-3.5" /> Annuler
+          </button>
+          <button type="button" onClick={() => onSave(form)} disabled={saving} className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
+            <CheckIcon className="h-3.5 w-3.5" /> {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Carte d'une fiche technique complète
-function CultureSheetCard({ sheet }) {
+function CultureSheetCard({ sheet, onUpdate }) {
   const { species, nurseryChart, transplantChart, directSowChart, yieldChart, taskTemplates } = sheet;
   const [expanded, setExpanded] = useState(false);
+  const [editing, setEditing] = useState(null); // 'nursery' | 'transplant' | 'directSow' | 'yield'
+  const [saving, setSaving] = useState(false);
+
+  // Enregistre une sous-charte
+  const handleSave = async (chartType, data) => {
+    setSaving(true);
+    try {
+      // Nettoyer les valeurs vides
+      const cleaned = {};
+      for (const [k, v] of Object.entries(data)) {
+        cleaned[k] = v === '' ? null : v;
+      }
+      await api.put(`/culture-sheets/${sheet.id}`, { [chartType]: cleaned });
+      toast.success('Charte mise à jour');
+      setEditing(null);
+      onUpdate();
+    } catch {
+      toast.error('Erreur lors de la mise à jour');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Supprime une sous-charte
+  const handleDelete = async (chartType) => {
+    setSaving(true);
+    try {
+      await api.put(`/culture-sheets/${sheet.id}`, { [chartType]: null });
+      toast.success('Charte supprimée');
+      setEditing(null);
+      onUpdate();
+    } catch {
+      toast.error('Erreur lors de la suppression');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="card overflow-hidden">
@@ -96,82 +388,150 @@ function CultureSheetCard({ sheet }) {
       {expanded && (
         <div>
           {/* Pépinière */}
-          {nurseryChart && (
-            <Section title="Pépinière" icon="🌱" defaultOpen>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
-                <DataRow label="Contenant" value={nurseryChart.containerType} />
-                <DataRow label="Graines / cellule" value={nurseryChart.seedsPerCell} />
-                <DataRow label="Technique" value={nurseryChart.technique} />
-                <DataRow label="Jours germination" value={nurseryChart.germinationDays} unit="j" />
-                <DataRow label="Temp. germination" value={nurseryChart.germinationTempC} unit="°C" />
-              </div>
-              {nurseryChart.repotStages?.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Rempotages</p>
-                  <div className="space-y-1">
-                    {nurseryChart.repotStages.map((s) => (
-                      <div key={s.id} className="flex items-center gap-2 text-sm">
-                        <span className="w-5 h-5 flex items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold">{s.stageNumber}</span>
-                        <span className="text-gray-700">{s.containerType}</span>
-                        <span className="text-gray-400">— {s.daysAfterSowing} j après semis</span>
-                      </div>
-                    ))}
+          {(nurseryChart || editing === 'nursery') && (
+            <Section title="Pépinière" icon="🌱" defaultOpen onEdit={() => setEditing('nursery')} editing={editing === 'nursery'}>
+              {editing === 'nursery' ? (
+                <NurseryChartForm
+                  data={nurseryChart}
+                  onSave={(data) => handleSave('nurseryChart', data)}
+                  onCancel={() => setEditing(null)}
+                  onDelete={nurseryChart ? () => handleDelete('nurseryChart') : null}
+                  saving={saving}
+                />
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+                    <DataRow label="Contenant" value={nurseryChart.containerType} />
+                    <DataRow label="Graines / cellule" value={nurseryChart.seedsPerCell} />
+                    <DataRow label="Technique" value={nurseryChart.technique} />
+                    <DataRow label="Jours germination" value={nurseryChart.germinationDays} unit="j" />
+                    <DataRow label="Temp. germination" value={nurseryChart.germinationTempC} unit="°C" />
                   </div>
-                </div>
+                  {nurseryChart.repotStages?.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Rempotages</p>
+                      <div className="space-y-1">
+                        {nurseryChart.repotStages.map((s) => (
+                          <div key={s.id} className="flex items-center gap-2 text-sm">
+                            <span className="w-5 h-5 flex items-center justify-center rounded-full bg-purple-100 text-purple-700 text-xs font-bold">{s.stageNumber}</span>
+                            <span className="text-gray-700">{s.containerType}</span>
+                            <span className="text-gray-400">— {s.daysAfterSowing} j après semis</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </Section>
           )}
 
           {/* Transplantation */}
-          {transplantChart && (
-            <Section title="Transplantation" icon="🌿">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
-                <DataRow label="Nb rangs" value={transplantChart.rowCount} />
-                <DataRow label="Espacement rangs" value={parseFloat(transplantChart.rowSpacingCm)} unit="cm" />
-                <DataRow label="Espacement plants" value={parseFloat(transplantChart.plantSpacingCm)} unit="cm" />
-                <DataRow label="Durée pépinière" value={transplantChart.nurseryDurationDays} unit="j" />
-                <DataRow label="JAM" value={transplantChart.daysToMaturity} unit="j" />
-                <DataRow label="Fenêtre récolte" value={transplantChart.harvestWindowDays} unit="j" />
-                <DataRow label="Semaine début" value={transplantChart.sowWeekStart} />
-                <DataRow label="Semaine fin" value={transplantChart.sowWeekEnd} />
-                <DataRow label="Marge sécurité" value={transplantChart.safetyMarginPct} unit="%" />
-                <DataRow label="Plants / m²" value={transplantChart.plantsPerM2 ? parseFloat(transplantChart.plantsPerM2) : null} />
-                <DataRow label="Plants / m² (+ marge)" value={transplantChart.plantsPerM2WithMargin ? parseFloat(transplantChart.plantsPerM2WithMargin) : null} />
-              </div>
+          {(transplantChart || editing === 'transplant') && (
+            <Section title="Transplantation" icon="🌿" onEdit={() => setEditing('transplant')} editing={editing === 'transplant'}>
+              {editing === 'transplant' ? (
+                <TransplantChartForm
+                  data={transplantChart}
+                  onSave={(data) => handleSave('transplantChart', data)}
+                  onCancel={() => setEditing(null)}
+                  onDelete={transplantChart ? () => handleDelete('transplantChart') : null}
+                  saving={saving}
+                />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+                  <DataRow label="Nb rangs" value={transplantChart.rowCount} />
+                  <DataRow label="Espacement rangs" value={parseFloat(transplantChart.rowSpacingCm)} unit="cm" />
+                  <DataRow label="Espacement plants" value={parseFloat(transplantChart.plantSpacingCm)} unit="cm" />
+                  <DataRow label="Durée pépinière" value={transplantChart.nurseryDurationDays} unit="j" />
+                  <DataRow label="JAM" value={transplantChart.daysToMaturity} unit="j" />
+                  <DataRow label="Fenêtre récolte" value={transplantChart.harvestWindowDays} unit="j" />
+                  <DataRow label="Semaine début" value={transplantChart.sowWeekStart} />
+                  <DataRow label="Semaine fin" value={transplantChart.sowWeekEnd} />
+                  <DataRow label="Marge sécurité" value={transplantChart.safetyMarginPct} unit="%" />
+                  <DataRow label="Plants / m²" value={transplantChart.plantsPerM2 ? parseFloat(transplantChart.plantsPerM2) : null} />
+                  <DataRow label="Plants / m² (+ marge)" value={transplantChart.plantsPerM2WithMargin ? parseFloat(transplantChart.plantsPerM2WithMargin) : null} />
+                </div>
+              )}
             </Section>
           )}
 
           {/* Semis direct */}
-          {directSowChart && (
-            <Section title="Semis direct" icon="🌾">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
-                <DataRow label="Nb rangs" value={directSowChart.rowCount} />
-                <DataRow label="Espacement rangs" value={parseFloat(directSowChart.rowSpacingCm)} unit="cm" />
-                <DataRow label="JAM" value={directSowChart.daysToMaturity} unit="j" />
-                <DataRow label="Fenêtre récolte" value={directSowChart.harvestWindowDays} unit="j" />
-                <DataRow label="Marge sécurité" value={directSowChart.safetyMarginPct} unit="%" />
-                <DataRow label="Semaine début" value={directSowChart.sowWeekStart} />
-                <DataRow label="Semaine fin" value={directSowChart.sowWeekEnd} />
-              </div>
+          {(directSowChart || editing === 'directSow') && (
+            <Section title="Semis direct" icon="🌾" onEdit={() => setEditing('directSow')} editing={editing === 'directSow'}>
+              {editing === 'directSow' ? (
+                <DirectSowChartForm
+                  data={directSowChart}
+                  onSave={(data) => handleSave('directSowChart', data)}
+                  onCancel={() => setEditing(null)}
+                  onDelete={directSowChart ? () => handleDelete('directSowChart') : null}
+                  saving={saving}
+                />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+                  <DataRow label="Nb rangs" value={directSowChart.rowCount} />
+                  <DataRow label="Espacement rangs" value={parseFloat(directSowChart.rowSpacingCm)} unit="cm" />
+                  <DataRow label="JAM" value={directSowChart.daysToMaturity} unit="j" />
+                  <DataRow label="Fenêtre récolte" value={directSowChart.harvestWindowDays} unit="j" />
+                  <DataRow label="Marge sécurité" value={directSowChart.safetyMarginPct} unit="%" />
+                  <DataRow label="Semaine début" value={directSowChart.sowWeekStart} />
+                  <DataRow label="Semaine fin" value={directSowChart.sowWeekEnd} />
+                </div>
+              )}
             </Section>
           )}
 
           {/* Rendement */}
-          {yieldChart && (
-            <Section title="Rendement" icon="📊">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
-                <DataRow label="Unité de vente" value={yieldChart.saleUnit} />
-                <DataRow label="Poids / unité" value={yieldChart.weightPerUnitG ? parseFloat(yieldChart.weightPerUnitG) : null} unit="g" />
-                <DataRow label="Prix / unité" value={yieldChart.pricePerUnit ? `${parseFloat(yieldChart.pricePerUnit).toFixed(2)} €` : null} />
-                <DataRow label="Rendement / 30m" value={yieldChart.yieldQtyPer30m ? parseFloat(yieldChart.yieldQtyPer30m) : null} unit="unités" />
-                <DataRow label="Rendement / 30m" value={yieldChart.yieldKgPer30m ? parseFloat(yieldChart.yieldKgPer30m) : null} unit="kg" />
-                <DataRow label="Revenu / 30m" value={yieldChart.revenuePer30m ? `${parseFloat(yieldChart.revenuePer30m).toFixed(0)} €` : null} />
-                <DataRow label="Jours de récolte" value={yieldChart.harvestDays} unit="j" />
-                <DataRow label="€ / jour / m" value={yieldChart.revenuePerDayPerM ? parseFloat(yieldChart.revenuePerDayPerM).toFixed(2) : null} />
-                <DataRow label="Kg / jour / m" value={yieldChart.yieldKgPerDayPerM ? parseFloat(yieldChart.yieldKgPerDayPerM).toFixed(2) : null} />
-                <DataRow label="Récoltes / semaine" value={yieldChart.harvestsPerWeek ? parseFloat(yieldChart.harvestsPerWeek) : null} />
-              </div>
+          {(yieldChart || editing === 'yield') && (
+            <Section title="Rendement" icon="📊" onEdit={() => setEditing('yield')} editing={editing === 'yield'}>
+              {editing === 'yield' ? (
+                <YieldChartForm
+                  data={yieldChart}
+                  onSave={(data) => handleSave('yieldChart', data)}
+                  onCancel={() => setEditing(null)}
+                  onDelete={yieldChart ? () => handleDelete('yieldChart') : null}
+                  saving={saving}
+                />
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+                  <DataRow label="Unité de vente" value={yieldChart.saleUnit} />
+                  <DataRow label="Poids / unité" value={yieldChart.weightPerUnitG ? parseFloat(yieldChart.weightPerUnitG) : null} unit="g" />
+                  <DataRow label="Prix / unité" value={yieldChart.pricePerUnit ? `${parseFloat(yieldChart.pricePerUnit).toFixed(2)} €` : null} />
+                  <DataRow label="Rendement / 30m" value={yieldChart.yieldQtyPer30m ? parseFloat(yieldChart.yieldQtyPer30m) : null} unit="unités" />
+                  <DataRow label="Rendement / 30m" value={yieldChart.yieldKgPer30m ? parseFloat(yieldChart.yieldKgPer30m) : null} unit="kg" />
+                  <DataRow label="Revenu / 30m" value={yieldChart.revenuePer30m ? `${parseFloat(yieldChart.revenuePer30m).toFixed(0)} €` : null} />
+                  <DataRow label="Jours de récolte" value={yieldChart.harvestDays} unit="j" />
+                  <DataRow label="€ / jour / m" value={yieldChart.revenuePerDayPerM ? parseFloat(yieldChart.revenuePerDayPerM).toFixed(2) : null} />
+                  <DataRow label="Kg / jour / m" value={yieldChart.yieldKgPerDayPerM ? parseFloat(yieldChart.yieldKgPerDayPerM).toFixed(2) : null} />
+                  <DataRow label="Récoltes / semaine" value={yieldChart.harvestsPerWeek ? parseFloat(yieldChart.harvestsPerWeek) : null} />
+                </div>
+              )}
             </Section>
+          )}
+
+          {/* Boutons pour ajouter les chartes manquantes */}
+          {(!nurseryChart || !transplantChart || !directSowChart || !yieldChart) && !editing && (
+            <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap gap-2">
+              {!nurseryChart && (
+                <button onClick={() => setEditing('nursery')} className="text-xs text-purple-600 hover:text-purple-800 border border-purple-200 rounded-lg px-2.5 py-1 hover:bg-purple-50 flex items-center gap-1">
+                  <PlusIcon className="h-3 w-3" /> Pépinière
+                </button>
+              )}
+              {!transplantChart && (
+                <button onClick={() => setEditing('transplant')} className="text-xs text-green-600 hover:text-green-800 border border-green-200 rounded-lg px-2.5 py-1 hover:bg-green-50 flex items-center gap-1">
+                  <PlusIcon className="h-3 w-3" /> Transplantation
+                </button>
+              )}
+              {!directSowChart && (
+                <button onClick={() => setEditing('directSow')} className="text-xs text-blue-600 hover:text-blue-800 border border-blue-200 rounded-lg px-2.5 py-1 hover:bg-blue-50 flex items-center gap-1">
+                  <PlusIcon className="h-3 w-3" /> Semis direct
+                </button>
+              )}
+              {!yieldChart && (
+                <button onClick={() => setEditing('yield')} className="text-xs text-yellow-600 hover:text-yellow-800 border border-yellow-200 rounded-lg px-2.5 py-1 hover:bg-yellow-50 flex items-center gap-1">
+                  <PlusIcon className="h-3 w-3" /> Rendement
+                </button>
+              )}
+            </div>
           )}
 
           {/* Tâches */}
@@ -361,7 +721,7 @@ export default function ChartsPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map((sheet) => (
-            <CultureSheetCard key={sheet.id} sheet={sheet} />
+            <CultureSheetCard key={sheet.id} sheet={sheet} onUpdate={fetchData} />
           ))}
         </div>
       )}

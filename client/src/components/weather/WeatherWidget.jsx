@@ -21,7 +21,7 @@ function WeatherDay({ day, isToday = false }) {
   return (
     <div
       className={[
-        'card flex flex-col items-center gap-2 p-4 text-center min-w-[120px]',
+        'card flex flex-col items-center gap-1.5 p-3 sm:p-4 text-center flex-1 min-w-0',
         isToday ? 'ring-2 ring-[#1B5E20]' : '',
       ].join(' ')}
       aria-label={`Météo du ${dateLabel}`}
@@ -29,18 +29,18 @@ function WeatherDay({ day, isToday = false }) {
       {/* Gel */}
       {day.frost && (
         <span
-          className="inline-block text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold"
+          className="inline-block text-[10px] sm:text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-semibold"
           aria-label="Risque de gel"
         >
           ⚠️ Gel
         </span>
       )}
 
-      <p className="text-xs font-medium text-gray-500 capitalize">{dateLabel}</p>
-      <span className="text-4xl" aria-hidden="true">{emoji}</span>
+      <p className="text-[10px] sm:text-xs font-medium text-gray-500 capitalize">{dateLabel}</p>
+      <span className="text-2xl sm:text-4xl" aria-hidden="true">{emoji}</span>
 
       {/* Températures */}
-      <div className="flex gap-2 text-sm">
+      <div className="flex gap-1.5 text-xs sm:text-sm">
         <span className="font-bold text-orange-500" aria-label={`Température maximale ${day.temp_max}°C`}>
           {day.temp_max !== undefined ? `${day.temp_max}°` : '–'}
         </span>
@@ -51,14 +51,14 @@ function WeatherDay({ day, isToday = false }) {
 
       {/* Pluie */}
       {day.rain !== undefined && (
-        <div className="text-xs text-gray-500" aria-label={`Précipitations ${day.rain} mm`}>
+        <div className="text-[10px] sm:text-xs text-gray-500" aria-label={`Précipitations ${day.rain} mm`}>
           🌧️ {day.rain} mm
         </div>
       )}
 
       {/* Ensoleillement */}
       {day.sunshine_hours !== undefined && (
-        <div className="text-xs text-gray-500" aria-label={`Ensoleillement ${day.sunshine_hours}h`}>
+        <div className="text-[10px] sm:text-xs text-gray-500" aria-label={`Ensoleillement ${day.sunshine_hours}h`}>
           ☀️ {day.sunshine_hours}h
         </div>
       )}
@@ -138,7 +138,7 @@ export default function WeatherWidget() {
       <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">
         Météo
       </h2>
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
         {today && <WeatherDay day={today} isToday />}
         {forecast.map((day) => (
           <WeatherDay key={day.date} day={day} />

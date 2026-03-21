@@ -41,8 +41,8 @@ function BedStrip({ bed, onClick, onEdit }) {
       aria-label={`Planche ${bed.name}${isFree ? ', libre' : ''}`}
     >
       {/* Label planche + bouton édition */}
-      <div className="flex flex-col items-center justify-center px-2 sm:px-3 py-2 bg-gray-50 border-r border-gray-200 flex-shrink-0 min-w-[56px] sm:min-w-[80px] group-hover:bg-gray-100 transition-colors relative">
-        <span className="text-[10px] sm:text-xs font-bold text-gray-900">{bed.name}</span>
+      <div className="flex flex-col items-center justify-center px-2 sm:px-3 py-2 bg-gray-50 border-r border-gray-200 flex-shrink-0 w-[56px] sm:w-[80px] group-hover:bg-gray-100 transition-colors relative">
+        <span className="text-[10px] sm:text-xs font-bold text-gray-900 text-center break-words leading-tight w-full">{bed.name}</span>
         <span className="text-[8px] sm:text-[10px] text-gray-400">
           {totalArea}m²
         </span>
@@ -58,8 +58,9 @@ function BedStrip({ bed, onClick, onEdit }) {
 
       {/* Bande proportionnelle : plantations + espace libre */}
       <div className="flex-1 flex">
-        {plantings.map((p, i) => {
+        {plantings.map((p) => {
           const area = parseFloat(p.quantityPlanted) || 0;
+          const pct = totalArea > 0 && area > 0 ? (area / totalArea) * 100 : null;
           const sc = STATUS_COLORS[p.status] || STATUS_COLORS.PLANIFIE;
           const speciesName = p.cultivar?.species?.name;
           const cultivarName = p.cultivar?.name;
@@ -67,16 +68,17 @@ function BedStrip({ bed, onClick, onEdit }) {
           return (
             <div
               key={p.id}
-              className="flex flex-col items-center justify-center px-1 sm:px-2 py-1"
+              className="flex flex-col items-center justify-center px-1 sm:px-2 py-1 min-w-0 overflow-hidden"
               style={{
-                flex: area > 0 ? area : totalArea / plantings.length,
+                width: pct ? `${pct}%` : undefined,
+                flex: pct ? `0 0 ${pct}%` : 1,
                 backgroundColor: sc.bg,
                 borderRight: '2px solid white',
               }}
               title={`${speciesName} — ${cultivarName} — ${area > 0 ? area + 'm²' : ''} ${STATUS_LABELS[p.status] || p.status}`}
             >
               <span className="text-sm sm:text-base leading-none">{getSpeciesIcon(speciesName)}</span>
-              <span className="text-[9px] sm:text-xs font-semibold leading-tight text-center truncate w-full" style={{ color: sc.text }}>
+              <span className="text-[9px] sm:text-xs font-semibold leading-tight text-center break-words w-full" style={{ color: sc.text }}>
                 {cultivarName}
               </span>
               <div className="hidden sm:flex items-center gap-1 mt-0.5">
@@ -96,10 +98,11 @@ function BedStrip({ bed, onClick, onEdit }) {
           const usedArea = plantings.reduce((s, p) => s + (parseFloat(p.quantityPlanted) || 0), 0);
           const freeArea = totalArea - usedArea;
           if (freeArea <= 0) return null;
+          const freePct = (freeArea / totalArea) * 100;
           return (
             <div
               className="flex items-center justify-center relative overflow-hidden"
-              style={{ flex: freeArea, backgroundColor: '#2d4a1e' }}
+              style={{ flex: `0 0 ${freePct}%`, width: `${freePct}%`, backgroundColor: '#2d4a1e' }}
             >
               <div className="absolute inset-0 opacity-15">
                 {[...Array(6)].map((_, i) => (

@@ -407,23 +407,23 @@ function ExploitationTab() {
 
 // --- Onglet Export ---
 const FORMATS = [
-  { key: 'xlsx', label: 'Excel', ext: 'xlsx', color: 'text-green-700 border-green-300 hover:bg-green-50' },
-  { key: 'pdf',  label: 'PDF',   ext: 'pdf',  color: 'text-red-700 border-red-300 hover:bg-red-50' },
-  { key: 'csv',  label: 'CSV',   ext: 'csv',  color: 'text-gray-700 border-gray-300 hover:bg-gray-50' },
+  { key: 'xlsx', label: 'Excel', ext: 'xlsx', icon: '📗', color: 'text-green-700 bg-green-50 border-green-200 hover:bg-green-100' },
+  { key: 'pdf',  label: 'PDF',   ext: 'pdf',  icon: '📕', color: 'text-red-700 bg-red-50 border-red-200 hover:bg-red-100' },
+  { key: 'csv',  label: 'CSV',   ext: 'csv',  icon: '📄', color: 'text-gray-700 bg-gray-50 border-gray-200 hover:bg-gray-100' },
 ];
 
 const EXPORTS = [
-  { label: 'Plantations', entity: 'plantings' },
-  { label: 'Récoltes',    entity: 'harvests' },
-  { label: 'Tâches',      entity: 'tasks' },
-  { label: 'Graines',     entity: 'seeds' },
-  { label: 'Pépinière',   entity: 'nursery' },
-  { label: 'Météo',       entity: 'weather' },
+  { label: 'Plantations', entity: 'plantings', icon: '🌱' },
+  { label: 'Récoltes',    entity: 'harvests',  icon: '🥬' },
+  { label: 'Tâches',      entity: 'tasks',     icon: '✅' },
+  { label: 'Graines',     entity: 'seeds',     icon: '🌾' },
+  { label: 'Pépinière',   entity: 'nursery',   icon: '🌿' },
+  { label: 'Météo',       entity: 'weather',   icon: '☀️' },
 ];
 
 function ExportTab() {
   const { activeSeason } = useSeason();
-  const [loading, setLoading] = useState(null); // "entity-format"
+  const [loading, setLoading] = useState(null);
 
   const handleExport = async (entity, format, ext) => {
     const key = `${entity}-${format}`;
@@ -449,54 +449,45 @@ function ExportTab() {
 
   return (
     <div className="max-w-2xl">
-      <p className="text-sm text-gray-600 mb-5">
-        Saison : <strong>{activeSeason?.name || '—'}</strong>
-      </p>
+      <div className="card p-3 sm:p-4 mb-4 flex items-center gap-3">
+        <span className="text-sm text-gray-500">Saison :</span>
+        <span className="font-semibold text-gray-900">{activeSeason?.name || '—'}</span>
+      </div>
 
-      <div className="card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-4 py-3 font-semibold text-gray-600">Données</th>
-              {FORMATS.map((f) => (
-                <th key={f.key} className="text-center px-4 py-3 font-semibold text-gray-600">
-                  {f.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {EXPORTS.map(({ label, entity }) => (
-              <tr key={entity} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-800">{label}</td>
-                {FORMATS.map((f) => {
-                  const key = `${entity}-${f.key}`;
-                  const isLoading = loading === key;
-                  return (
-                    <td key={f.key} className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => handleExport(entity, f.key, f.ext)}
-                        disabled={!!loading}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors disabled:opacity-40 ${f.color}`}
-                        aria-label={`Exporter ${label} en ${f.label}`}
-                      >
-                        {isLoading ? (
-                          <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                          </svg>
-                        ) : (
-                          <ArrowDownTrayIcon className="h-3.5 w-3.5" aria-hidden="true" />
-                        )}
-                        {f.label}
-                      </button>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {EXPORTS.map(({ label, entity, icon }) => (
+          <div key={entity} className="card p-4">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="text-lg" aria-hidden="true">{icon}</span>
+              <h3 className="font-semibold text-sm text-gray-900">{label}</h3>
+            </div>
+            <div className="flex gap-2">
+              {FORMATS.map((f) => {
+                const key = `${entity}-${f.key}`;
+                const isLoading = loading === key;
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => handleExport(entity, f.key, f.ext)}
+                    disabled={!!loading}
+                    className={`flex-1 inline-flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg border text-xs font-medium transition-colors disabled:opacity-40 ${f.color}`}
+                    aria-label={`Exporter ${label} en ${f.label}`}
+                  >
+                    {isLoading ? (
+                      <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                    ) : (
+                      <ArrowDownTrayIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                    )}
+                    {f.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -492,7 +492,7 @@ export default function TasksPage() {
       <div className="page-header mb-4 sm:mb-5">
         <h1 className="page-title text-lg sm:text-xl">✅ Tâches</h1>
         <button onClick={() => { setEditingTask(null); setModalOpen(true); }} className="btn-primary flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2">
-          <PlusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Nouvelle</span><span className="sm:hidden">+</span>
+          <PlusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" /> <span className="hidden sm:inline">Nouvelle</span><span className="sm:hidden">Tâche</span>
         </button>
       </div>
 

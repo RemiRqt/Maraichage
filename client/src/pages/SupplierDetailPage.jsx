@@ -108,7 +108,6 @@ function PdfViewer({ fileName, onClose }) {
 
 // ─── Onglet factures ──────────────────────────────────────────────────────────
 function InvoicesTab({ invoices, onDeleteInvoice }) {
-  const [expanded, setExpanded] = useState(null);
   const [viewingPdf, setViewingPdf] = useState(null);
 
   if (invoices.length === 0) {
@@ -123,94 +122,80 @@ function InvoicesTab({ invoices, onDeleteInvoice }) {
 
   return (
     <>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {invoices.map((inv) => (
           <div key={inv.id} className="card overflow-hidden">
             {/* En-tête facture */}
-            <div className="flex items-start justify-between gap-3 p-4">
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-semibold text-gray-900">N° {inv.number}</span>
+            <div className="p-3 sm:p-4 bg-gray-50 border-b border-gray-100">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  <span className="font-semibold text-gray-900 text-sm">N° {inv.number}</span>
                   {inv.date && (
                     <span className="text-xs text-gray-500">
-                      {format(parseISO(inv.date.split('T')[0]), 'd MMMM yyyy', { locale: fr })}
+                      {format(parseISO(inv.date.split('T')[0]), 'd MMM yyyy', { locale: fr })}
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {inv.lines?.length || 0} ligne{(inv.lines?.length || 0) !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
                 {inv.totalAmount != null && (
-                  <span className="font-bold text-green-700 text-lg">
+                  <span className="font-bold text-green-700 text-lg flex-shrink-0">
                     {parseFloat(inv.totalAmount).toFixed(2)} €
                   </span>
                 )}
-                {inv.fileName && (
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-gray-400">
+                  {inv.lines?.length || 0} ligne{(inv.lines?.length || 0) !== 1 ? 's' : ''}
+                </p>
+                <div className="flex items-center gap-1">
+                  {inv.fileName && (
+                    <button
+                      onClick={() => setViewingPdf(inv.fileName)}
+                      className="btn-ghost text-xs py-1 px-2 flex items-center gap-1 text-blue-600"
+                    >
+                      <EyeIcon className="h-3.5 w-3.5" /> PDF
+                    </button>
+                  )}
                   <button
-                    onClick={() => setViewingPdf(inv.fileName)}
-                    className="btn-ghost text-xs py-1 px-2 flex items-center gap-1 text-blue-600"
-                    title="Voir le PDF"
+                    onClick={() => onDeleteInvoice(inv)}
+                    className="btn-ghost p-1 text-red-400 hover:text-red-600"
+                    aria-label="Supprimer"
                   >
-                    <EyeIcon className="h-4 w-4" /> PDF
+                    <TrashIcon className="h-3.5 w-3.5" />
                   </button>
-                )}
-                <button
-                  onClick={() => setExpanded(expanded === inv.id ? null : inv.id)}
-                  className="btn-ghost text-xs py-1 px-2"
-                >
-                  {expanded === inv.id ? '▲ Masquer' : '▼ Détails'}
-                </button>
-                <button
-                  onClick={() => onDeleteInvoice(inv)}
-                  className="btn-ghost p-1.5 text-red-500"
-                  aria-label="Supprimer la facture"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                </button>
+                </div>
               </div>
             </div>
 
-            {/* Lignes de facture */}
-            {expanded === inv.id && inv.lines?.length > 0 && (
-              <div className="border-t border-gray-100">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="text-gray-500 bg-gray-50">
-                        <th className="text-left px-4 py-2 font-medium">Réf.</th>
-                        <th className="text-left px-4 py-2 font-medium">Produit</th>
-                        <th className="text-left px-4 py-2 font-medium">Conditionnement</th>
-                        <th className="text-right px-4 py-2 font-medium">Qté cmd.</th>
-                        <th className="text-right px-4 py-2 font-medium">Prix U.</th>
-                        <th className="text-right px-4 py-2 font-medium">Total</th>
-                        <th className="text-left px-4 py-2 font-medium">Cultivar</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {inv.lines.map((line) => (
-                        <tr key={line.id} className="border-t border-gray-50 hover:bg-gray-50">
-                          <td className="px-4 py-2 font-mono text-gray-400">{line.reference || '—'}</td>
-                          <td className="px-4 py-2 font-medium text-gray-800 max-w-[200px] truncate">
-                            {line.description || line.rawText}
-                          </td>
-                          <td className="px-4 py-2 text-gray-500">{line.packaging || '—'}</td>
-                          <td className="px-4 py-2 text-right text-gray-700">{line.qtyOrdered ?? '—'}</td>
-                          <td className="px-4 py-2 text-right text-gray-700">
-                            {line.unitPrice != null ? `${parseFloat(line.unitPrice).toFixed(2)} €` : '—'}
-                          </td>
-                          <td className="px-4 py-2 text-right font-medium text-green-700">
-                            {line.totalPrice != null ? `${parseFloat(line.totalPrice).toFixed(2)} €` : '—'}
-                          </td>
-                          <td className="px-4 py-2 text-purple-700">
-                            {line.cultivar ? line.cultivar.name : <span className="text-gray-300 italic">non associé</span>}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+            {/* Lignes de facture — toujours visibles */}
+            {inv.lines?.length > 0 && (
+              <div className="divide-y divide-gray-50">
+                {inv.lines.map((line) => (
+                  <div key={line.id} className="px-3 sm:px-4 py-2.5 flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {line.description || line.rawText}
+                      </p>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-[10px] text-gray-400">
+                        {line.reference && <span>Réf: {line.reference}</span>}
+                        {line.packaging && <span>{line.packaging}</span>}
+                        {line.qtyOrdered && <span>Qté: {line.qtyOrdered}</span>}
+                        {line.cultivar ? (
+                          <span className="text-purple-600 font-medium">{line.cultivar.name}</span>
+                        ) : (
+                          <span className="italic text-gray-300">non associé</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      {line.totalPrice != null && (
+                        <p className="text-sm font-semibold text-gray-900">{parseFloat(line.totalPrice).toFixed(2)} €</p>
+                      )}
+                      {line.unitPrice != null && (
+                        <p className="text-[10px] text-gray-400">{parseFloat(line.unitPrice).toFixed(2)} €/u</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

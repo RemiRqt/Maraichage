@@ -35,14 +35,14 @@ function StatCard({ icon: Icon, label, value, subValue, color = 'green' }) {
   };
 
   return (
-    <div className="card p-5 flex items-center gap-4">
-      <div className={`p-3 rounded-xl ${colorMap[color] || colorMap.green}`}>
-        <Icon className="h-6 w-6" aria-hidden="true" />
+    <div className="card p-3 sm:p-5 flex items-center gap-2.5 sm:gap-4">
+      <div className={`p-2 sm:p-3 rounded-xl ${colorMap[color] || colorMap.green}`}>
+        <Icon className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
       </div>
-      <div>
-        <p className="text-sm text-gray-500">{label}</p>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-        {subValue && <p className="text-xs text-gray-400">{subValue}</p>}
+      <div className="min-w-0">
+        <p className="text-[10px] sm:text-sm text-gray-500 truncate">{label}</p>
+        <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
+        {subValue && <p className="text-[10px] sm:text-xs text-gray-400">{subValue}</p>}
       </div>
     </div>
   );
@@ -91,7 +91,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-3 sm:p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* Titre de la page */}
       <div className="page-header">
         <h1 className="page-title text-lg sm:text-xl">Tableau de bord</h1>
@@ -107,13 +107,13 @@ export default function DashboardPage() {
 
       {/* Statistiques résumées */}
       {loading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-busy="true" aria-label="Chargement des statistiques">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4" aria-busy="true" aria-label="Chargement des statistiques">
           {[...Array(4)].map((_, i) => (
             <CardSkeleton key={i} />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <StatCard
             icon={SparklesIcon}
             label="Récoltes à faire"

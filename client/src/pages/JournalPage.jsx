@@ -194,7 +194,7 @@ export default function JournalPage() {
           className="btn-primary flex items-center gap-2"
         >
           <PlusIcon className="h-4 w-4" aria-hidden="true" />
-          Nouvelle entrée
+          <span className="sr-only">Nouvelle entrée</span>
         </button>
       </div>
 

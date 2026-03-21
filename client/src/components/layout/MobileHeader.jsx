@@ -56,7 +56,7 @@ export default function MobileHeader() {
   return (
     <>
       {/* Header fixe */}
-      <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-2.5 bg-[#1B5E20] text-white shadow-md">
+      <header className="flex items-center justify-between px-4 py-2.5 bg-[#1B5E20] text-white shadow-md">
         <div className="flex items-center gap-2">
           <span className="text-lg">🌿</span>
           <span className="text-sm font-bold tracking-tight">MalaMaraichage</span>

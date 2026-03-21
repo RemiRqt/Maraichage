@@ -94,7 +94,7 @@ function SaisiesTab({ seasonId }) {
           className="btn-primary flex items-center gap-2"
         >
           <PlusIcon className="h-4 w-4" aria-hidden="true" />
-          Saisir une récolte
+          <span className="sr-only">Saisir une récolte</span>
         </button>
       </div>
 
@@ -496,8 +496,8 @@ function PrevisionnelTab({ seasonId }) {
       </div>
 
       {/* Timeline des semaines */}
-      <div className="card p-3 sm:p-4">
-        <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-13 gap-1 sm:gap-1.5">
+      <div className="card p-3 sm:p-4 overflow-x-auto">
+        <div className="flex gap-1 sm:gap-1.5 min-w-max">
           {forecast.weeks.map((w, idx) => {
             const hasItems = w.items.length > 0;
             const isCurrent = idx === currentWeekIdx;

@@ -189,7 +189,7 @@ function SeasonsTab() {
           className="btn-primary flex items-center gap-2"
         >
           <PlusIcon className="h-4 w-4" aria-hidden="true" />
-          Nouvelle saison
+          <span className="sr-only">Nouvelle saison</span>
         </button>
       </div>
 

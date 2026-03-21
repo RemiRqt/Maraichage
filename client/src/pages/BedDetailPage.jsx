@@ -81,7 +81,7 @@ export default function BedDetailPage() {
     : bed.areaM2 || null;
 
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 max-w-5xl mx-auto">
       {/* En-tête de navigation */}
       <button
         onClick={() => navigate('/parcelles')}
@@ -96,7 +96,7 @@ export default function BedDetailPage() {
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="page-title">{bed.name}</h1>
+            <h1 className="page-title text-lg sm:text-xl">{bed.name}</h1>
             {bed.zone?.name && (
               <span className="badge bg-blue-100 text-blue-700">{bed.zone.name}</span>
             )}

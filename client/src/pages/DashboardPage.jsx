@@ -91,10 +91,10 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
       {/* Titre de la page */}
       <div className="page-header">
-        <h1 className="page-title">Tableau de bord</h1>
+        <h1 className="page-title text-lg sm:text-xl">Tableau de bord</h1>
         {activeSeason && (
           <span className="badge bg-green-100 text-green-800">
             {activeSeason.name}

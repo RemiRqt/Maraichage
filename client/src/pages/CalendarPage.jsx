@@ -450,14 +450,14 @@ export default function CalendarPage() {
       : `Semaine du ${format(startOfWeek(currentDate, { locale: fr }), 'd MMM', { locale: fr })}`;
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
       {/* En-tête */}
-      <div className="page-header mb-6">
-        <h1 className="page-title">📅 Calendrier</h1>
+      <div className="page-header mb-4 sm:mb-6">
+        <h1 className="page-title text-lg sm:text-xl">📅 Calendrier</h1>
       </div>
 
       {/* Barre de navigation */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-5">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-5">
         {/* Navigation mois/semaine */}
         <div className="flex items-center gap-3">
           <button

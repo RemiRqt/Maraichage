@@ -322,7 +322,7 @@ export default function SupplierDetailPage() {
   if (!supplier) return null;
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto">
       {/* En-tête */}
       <div className="flex items-center gap-3 mb-6">
         <button onClick={() => navigate('/fournisseurs')} className="btn-ghost p-2">

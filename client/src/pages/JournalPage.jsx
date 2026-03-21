@@ -105,7 +105,7 @@ function JournalEntryCard({ entry, onEdit, onDelete }) {
       {(() => {
         const photos = typeof entry.photos === 'string' ? JSON.parse(entry.photos || '[]') : (entry.photos || []);
         return photos.length > 0 ? (
-        <div className="grid grid-cols-4 gap-2 mt-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
           {photos.map((photo, idx) => (
             <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
               <img
@@ -185,10 +185,10 @@ export default function JournalPage() {
   }))].sort();
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto">
       {/* En-tête */}
-      <div className="page-header mb-6">
-        <h1 className="page-title">📸 Journal</h1>
+      <div className="page-header mb-4 sm:mb-6">
+        <h1 className="page-title text-lg sm:text-xl">📸 Journal</h1>
         <button
           onClick={() => { setEditingEntry(null); setModalOpen(true); }}
           className="btn-primary flex items-center gap-2"

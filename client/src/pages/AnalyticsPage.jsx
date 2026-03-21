@@ -395,13 +395,13 @@ export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState('culture');
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto">
-      <div className="page-header mb-6">
-        <h1 className="page-title">📊 Analytique</h1>
+    <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
+      <div className="page-header mb-4 sm:mb-6">
+        <h1 className="page-title text-lg sm:text-xl">📊 Analytique</h1>
       </div>
 
       <div
-        className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-6 overflow-x-auto w-fit"
+        className="flex gap-1 p-1 bg-gray-100 rounded-xl mb-4 sm:mb-6 w-full sm:w-fit overflow-x-auto"
         role="tablist"
         aria-label="Onglets analytique"
       >

@@ -279,9 +279,9 @@ export default function SuppliersPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto">
-      <div className="page-header mb-6">
-        <h1 className="page-title">🏪 Fournisseurs</h1>
+    <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto">
+      <div className="page-header mb-4 sm:mb-6">
+        <h1 className="page-title text-lg sm:text-xl">🏪 Fournisseurs</h1>
         <button
           onClick={() => { setEditingSupplier(null); setModalOpen(true); }}
           className="btn-primary flex items-center gap-2"

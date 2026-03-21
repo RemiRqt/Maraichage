@@ -332,10 +332,10 @@ export default function PlanningPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 max-w-3xl mx-auto">
       {/* En-tête */}
-      <div className="page-header mb-6">
-        <h1 className="page-title">📋 Planification assistée</h1>
+      <div className="page-header mb-4 sm:mb-6">
+        <h1 className="page-title text-lg sm:text-xl">📋 Planification assistée</h1>
         {step > 1 && (
           <button
             onClick={handleReset}

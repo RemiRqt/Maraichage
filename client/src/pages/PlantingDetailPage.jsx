@@ -144,7 +144,7 @@ export default function PlantingDetailPage() {
     || planting.cultureSheet?.directSowChart?.daysToMaturity || 0;
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto">
+    <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto">
       {/* Navigation retour */}
       <button
         onClick={() => navigate(-1)}

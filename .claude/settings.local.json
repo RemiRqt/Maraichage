@@ -72,7 +72,12 @@
       "Bash(git ls-remote:*)",
       "Bash(powershell -Command \"Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force\" 2>&1)",
       "Bash(railway version:*)",
-      "Bash(railway login:*)"
+      "Bash(railway login:*)",
+      "Bash(__NEW_LINE_0ab4654d1367ebe6__ for:*)",
+      "Bash(do)",
+      "Bash(sed -i 's/className=\"\"page-title\"\">/className=\"\"page-title text-lg sm:text-xl\"\">/g' \"$f\")",
+      "Bash(echo \"Fixed title: $f\")",
+      "Bash(done)"
     ]
   }
 }

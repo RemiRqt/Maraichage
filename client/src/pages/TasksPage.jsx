@@ -131,33 +131,34 @@ function TaskCard({ task, onComplete, completingId }) {
   );
 }
 
-// Barre de charge
-function WorkloadSummary({ tasks, label }) {
+// Barre de charge avec objectif adapté à la vue
+function WorkloadSummary({ tasks, label, viewMode = 'day' }) {
   const totalMin = tasks.reduce((s, t) => s + estimateMinutes(t), 0);
   const todoCount = tasks.filter((t) => t.status === 'A_FAIRE').length;
-  const doneCount = tasks.filter((t) => t.status === 'FAIT').length;
   const lateCount = tasks.filter((t) => t.status === 'A_FAIRE' && t.scheduledDate && isPast(parseISO(t.scheduledDate)) && !isToday(parseISO(t.scheduledDate))).length;
   const hours = totalMin / 60;
-  const maxH = 8;
-  const pct = Math.min(100, (hours / maxH) * 100);
-  const color = hours > 6 ? 'bg-red-500' : hours > 4 ? 'bg-orange-400' : hours > 0 ? 'bg-green-500' : 'bg-gray-200';
+  const objectif = viewMode === 'month' ? 140 : viewMode === 'week' ? 35 : 8;
+  const objectifLabel = viewMode === 'month' ? '140h/mois' : viewMode === 'week' ? '35h/sem' : '8h/jour';
+  const pct = Math.min(100, (hours / objectif) * 100);
+  const color = pct > 90 ? 'bg-red-500' : pct > 60 ? 'bg-orange-400' : hours > 0 ? 'bg-green-500' : 'bg-gray-200';
 
   return (
-    <div className="card p-4">
-      {label && <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{label}</p>}
+    <div className="card p-3 sm:p-4">
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-4 text-sm">
-          <span className="font-semibold text-gray-900">{tasks.length} tâche{tasks.length !== 1 ? 's' : ''}</span>
-          {todoCount > 0 && <span className="text-orange-600">{todoCount} à faire</span>}
-          {doneCount > 0 && <span className="text-green-600">{doneCount} faites</span>}
-          {lateCount > 0 && <span className="text-red-600 font-semibold">{lateCount} en retard</span>}
+        <div className="flex items-center gap-2 text-xs sm:text-sm min-w-0">
+          <span className="font-bold text-gray-900">{tasks.length}</span>
+          <span className="text-gray-400">tâche{tasks.length !== 1 ? 's' : ''}</span>
+          {todoCount > 0 && <span className="text-orange-600 font-medium">{todoCount} à faire</span>}
+          {lateCount > 0 && <span className="text-red-600 font-bold">{lateCount} retard</span>}
         </div>
-        <span className="text-sm font-bold text-gray-900">{formatDuration(totalMin) || '–'}</span>
+        <div className="text-right flex-shrink-0">
+          <p className="text-lg sm:text-xl font-bold text-gray-900">{hours.toFixed(1)}h</p>
+          <p className="text-[9px] text-gray-400">{objectifLabel}</p>
+        </div>
       </div>
-      <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <p className="text-[10px] text-gray-400 mt-1 text-right">Objectif : 8h/jour</p>
     </div>
   );
 }
@@ -224,7 +225,7 @@ function DayView({ date, tasks, onComplete, completingId }) {
 
   return (
     <div className="space-y-4">
-      <WorkloadSummary tasks={tasks} label={format(date, 'EEEE d MMMM', { locale: fr })} />
+      <WorkloadSummary tasks={tasks} viewMode="day" />
 
       {tasks.length === 0 ? (
         <div className="card p-8 text-center text-gray-400">
@@ -260,7 +261,7 @@ function WeekView({ date, tasks, onComplete, completingId }) {
 
   return (
     <div className="space-y-4">
-      <WorkloadSummary tasks={tasks} label={`Semaine du ${format(weekStart, 'd', { locale: fr })} au ${format(weekEnd, 'd MMMM', { locale: fr })}`} />
+      <WorkloadSummary tasks={tasks} viewMode="week" />
 
       {/* Mini barres par jour */}
       <div className="card p-4">
@@ -346,7 +347,7 @@ function MonthView({ date, tasks, onComplete, completingId }) {
 
   return (
     <div className="space-y-4">
-      <WorkloadSummary tasks={tasks} label={format(date, 'MMMM yyyy', { locale: fr })} />
+      <WorkloadSummary tasks={tasks} viewMode="month" />
 
       {/* Calendrier compact */}
       <div className="card overflow-hidden">
@@ -488,28 +489,25 @@ export default function TasksPage() {
 
   return (
     <div className="p-3 sm:p-4 md:p-6 max-w-3xl mx-auto">
-      {/* En-tête */}
-      <div className="page-header mb-4 sm:mb-5">
-        <h1 className="page-title text-lg sm:text-xl">✅ Tâches</h1>
-        <button onClick={() => { setEditingTask(null); setModalOpen(true); }} className="btn-primary flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2">
-          <PlusIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" /><span className="sr-only">Nouvelle tâche</span>
-        </button>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 mb-4 sm:mb-5">
-        <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto justify-center">
-          <button onClick={navigatePrev} className="btn-ghost p-1.5 sm:p-2"><ChevronLeftIcon className="h-4 w-4 sm:h-5 sm:w-5" /></button>
-          <h2 className="text-xs sm:text-sm font-semibold text-gray-800 capitalize min-w-[120px] sm:min-w-[140px] text-center">{periodLabel}</h2>
-          <button onClick={navigateNext} className="btn-ghost p-1.5 sm:p-2"><ChevronRightIcon className="h-4 w-4 sm:h-5 sm:w-5" /></button>
-          <button onClick={() => setCurrentDate(new Date())} className="btn-secondary text-[10px] sm:text-xs px-1.5 sm:px-2 py-1">Auj.</button>
+      {/* En-tête compact : navigation + vue + bouton + */}
+      <div className="mb-4">
+        {/* Ligne 1 : flèches + période + auj + bouton + */}
+        <div className="flex items-center gap-1 mb-2">
+          <button onClick={navigatePrev} className="btn-ghost p-1.5"><ChevronLeftIcon className="h-4 w-4" /></button>
+          <h2 className="flex-1 text-sm font-bold text-gray-900 capitalize text-center">{periodLabel}</h2>
+          <button onClick={navigateNext} className="btn-ghost p-1.5"><ChevronRightIcon className="h-4 w-4" /></button>
+          <button onClick={() => setCurrentDate(new Date())} className="btn-secondary text-[10px] px-2 py-1">Auj.</button>
+          <button onClick={() => { setEditingTask(null); setModalOpen(true); }} className="btn-primary p-1.5">
+            <PlusIcon className="h-4 w-4" aria-hidden="true" />
+          </button>
         </div>
-        <div className="flex gap-0.5 p-0.5 bg-gray-100 rounded-lg">
+        {/* Ligne 2 : sélecteur de vue */}
+        <div className="flex gap-0.5 p-0.5 bg-gray-100 rounded-lg w-fit mx-auto">
           {VIEW_MODES.map((v) => (
             <button
               key={v.id}
               onClick={() => setViewMode(v.id)}
-              className={`px-2 sm:px-2.5 py-1 text-[10px] sm:text-xs rounded-md transition-all ${viewMode === v.id ? 'bg-white text-[#1B5E20] shadow-sm font-semibold' : 'text-gray-500'}`}
+              className={`px-3 py-1 text-xs rounded-md transition-all ${viewMode === v.id ? 'bg-white text-[#1B5E20] shadow-sm font-semibold' : 'text-gray-500'}`}
             >
               {v.label}
             </button>

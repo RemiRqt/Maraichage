@@ -133,99 +133,142 @@ function SeedAddForm({ cultivars, onSuccess, onCancel, seed }) {
 
   // Mode PDF — étape validation
   if (mode === 'pdf' && importData) {
+    const matched = importData.lines.filter((l) => l.cultivarId).length;
+    const total = importData.lines.length;
+
     return (
       <div className="space-y-4">
-        {/* Fournisseur */}
-        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-          <p className="text-xs font-semibold text-gray-500 uppercase">Fournisseur</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div>
-              <label className="form-label text-xs">Existant</label>
-              <select className="form-input text-sm" value={importData.supplier.id || ''}
-                onChange={(e) => {
-                  const found = importSuppliers.find((s) => s.id === e.target.value);
-                  setImportData((d) => ({ ...d, supplier: found ? { id: found.id, name: found.name, siret: found.siret || '', email: found.email || '', phone: found.phone || '', website: found.website || '', address: found.address || '' } : { ...d.supplier, id: '' } }));
-                }}>
-                <option value="">— Nouveau —</option>
-                {importSuppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="form-label text-xs">Nom *</label>
-              <input type="text" className="form-input text-sm" value={importData.supplier.name || ''}
-                onChange={(e) => setImportData((d) => ({ ...d, supplier: { ...d.supplier, name: e.target.value } }))} />
-            </div>
+        {/* Résumé rapide */}
+        <div className="flex gap-2">
+          <div className="flex-1 bg-green-50 rounded-lg p-2.5 text-center">
+            <p className="text-lg font-bold text-green-700">{matched}/{total}</p>
+            <p className="text-[10px] text-green-600">Associées</p>
+          </div>
+          <div className="flex-1 bg-gray-50 rounded-lg p-2.5 text-center">
+            <p className="text-lg font-bold text-gray-900">{importData.invoice.totalAmount ? `${parseFloat(importData.invoice.totalAmount).toFixed(0)}€` : '—'}</p>
+            <p className="text-[10px] text-gray-500">Total TTC</p>
+          </div>
+          <div className="flex-1 bg-purple-50 rounded-lg p-2.5 text-center">
+            <p className="text-lg font-bold text-purple-700">{importData.supplier.name || '?'}</p>
+            <p className="text-[10px] text-purple-500">Fournisseur</p>
           </div>
         </div>
 
-        {/* Facture */}
-        <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-          <p className="text-xs font-semibold text-gray-500 uppercase">Facture</p>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="form-label text-xs">N° *</label>
-              <input type="text" className="form-input text-sm" value={importData.invoice.number || ''}
-                onChange={(e) => setImportData((d) => ({ ...d, invoice: { ...d.invoice, number: e.target.value } }))} />
+        {/* Fournisseur + Facture combinés */}
+        <details className="bg-gray-50 rounded-lg overflow-hidden">
+          <summary className="px-3 py-2.5 text-xs font-semibold text-gray-600 cursor-pointer hover:bg-gray-100 flex items-center justify-between">
+            <span>🏪 Fournisseur & facture</span>
+            <span className="text-[10px] font-normal text-gray-400">N° {importData.invoice.number || '—'}</span>
+          </summary>
+          <div className="px-3 pb-3 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] text-gray-400">Fournisseur existant</label>
+                <select className="form-input text-xs py-1.5" value={importData.supplier.id || ''}
+                  onChange={(e) => {
+                    const found = importSuppliers.find((s) => s.id === e.target.value);
+                    setImportData((d) => ({ ...d, supplier: found ? { id: found.id, name: found.name, siret: found.siret || '', email: found.email || '', phone: found.phone || '', website: found.website || '', address: found.address || '' } : { ...d.supplier, id: '' } }));
+                  }}>
+                  <option value="">— Nouveau —</option>
+                  {importSuppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-400">Nom *</label>
+                <input type="text" className="form-input text-xs py-1.5" value={importData.supplier.name || ''}
+                  onChange={(e) => setImportData((d) => ({ ...d, supplier: { ...d.supplier, name: e.target.value } }))} />
+              </div>
             </div>
-            <div>
-              <label className="form-label text-xs">Date</label>
-              <input type="date" className="form-input text-sm" value={importData.invoice.date || ''}
-                onChange={(e) => setImportData((d) => ({ ...d, invoice: { ...d.invoice, date: e.target.value } }))} />
-            </div>
-            <div>
-              <label className="form-label text-xs">Total (€)</label>
-              <input type="number" step="0.01" className="form-input text-sm" value={importData.invoice.totalAmount || ''}
-                onChange={(e) => setImportData((d) => ({ ...d, invoice: { ...d.invoice, totalAmount: e.target.value } }))} />
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-[10px] text-gray-400">N° facture *</label>
+                <input type="text" className="form-input text-xs py-1.5" value={importData.invoice.number || ''}
+                  onChange={(e) => setImportData((d) => ({ ...d, invoice: { ...d.invoice, number: e.target.value } }))} />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-400">Date</label>
+                <input type="date" className="form-input text-xs py-1.5" value={importData.invoice.date || ''}
+                  onChange={(e) => setImportData((d) => ({ ...d, invoice: { ...d.invoice, date: e.target.value } }))} />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-400">Total €</label>
+                <input type="number" step="0.01" className="form-input text-xs py-1.5" value={importData.invoice.totalAmount || ''}
+                  onChange={(e) => setImportData((d) => ({ ...d, invoice: { ...d.invoice, totalAmount: e.target.value } }))} />
+              </div>
             </div>
           </div>
-        </div>
+        </details>
 
         {/* Lignes */}
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-gray-500 uppercase">Lignes ({importData.lines.length})</p>
-          {importData.lines.length === 0 ? (
-            <p className="text-sm text-gray-400">Aucune ligne détectée.</p>
+        <div>
+          <p className="text-xs font-semibold text-gray-600 mb-2">🌾 {total} lignes détectées</p>
+          {total === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-4">Aucune ligne détectée dans le PDF.</p>
           ) : (
-            <div className="max-h-64 overflow-y-auto space-y-2">
+            <div className="max-h-[50vh] overflow-y-auto space-y-2 -mx-1 px-1">
               {importData.lines.map((line, idx) => {
                 const conf = line.matchConfidence || 'none';
-                const confCls = { high: 'border-green-300', medium: 'border-yellow-300', low: 'border-orange-300', none: 'border-red-300' }[conf];
+                const confStyle = {
+                  high:   { border: 'border-l-green-500', bg: 'bg-green-50/50', badge: 'bg-green-100 text-green-700', label: '✓' },
+                  medium: { border: 'border-l-yellow-500', bg: 'bg-yellow-50/30', badge: 'bg-yellow-100 text-yellow-700', label: '~' },
+                  low:    { border: 'border-l-orange-500', bg: 'bg-orange-50/30', badge: 'bg-orange-100 text-orange-700', label: '?' },
+                  none:   { border: 'border-l-red-400', bg: 'bg-white', badge: 'bg-red-100 text-red-600', label: '✗' },
+                }[conf];
+
                 return (
-                  <div key={idx} className={`border rounded-lg p-2.5 bg-white ${confCls}`}>
-                    <p className="text-[10px] text-gray-400 truncate mb-1.5">{line.description || line.rawText}</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      <div className="sm:col-span-2">
-                        <select className="form-input text-xs py-1" value={line.cultivarId || ''}
+                  <div key={idx} className={`rounded-lg border border-gray-200 border-l-4 ${confStyle.border} ${confStyle.bg} overflow-hidden`}>
+                    {/* Header ligne */}
+                    <div className="px-3 py-2 flex items-center gap-2">
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${confStyle.badge}`}>{confStyle.label}</span>
+                      <p className="text-sm font-medium text-gray-800 flex-1 truncate">{line.description || line.rawText}</p>
+                      {line.totalPrice != null && (
+                        <span className="text-sm font-semibold text-gray-900 flex-shrink-0">{parseFloat(line.totalPrice).toFixed(2)} €</span>
+                      )}
+                    </div>
+
+                    {/* Champs édition */}
+                    <div className="px-3 pb-2.5 grid grid-cols-3 gap-1.5">
+                      <div className="col-span-3 sm:col-span-1">
+                        <select className="form-input text-[11px] py-1 w-full" value={line.cultivarId || ''}
                           onChange={(e) => {
                             const lines = [...importData.lines];
                             lines[idx] = { ...lines[idx], cultivarId: e.target.value || null };
                             setImportData((d) => ({ ...d, lines }));
                           }}>
-                          <option value="">— Cultivar —</option>
+                          <option value="">Cultivar…</option>
                           {cultivars.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                       </div>
                       <div>
-                        <input type="number" className="form-input text-xs py-1" placeholder="Qté" value={line.unitQty ?? ''}
-                          onChange={(e) => {
-                            const lines = [...importData.lines];
-                            lines[idx] = { ...lines[idx], unitQty: e.target.value ? parseFloat(e.target.value) : null };
-                            setImportData((d) => ({ ...d, lines }));
-                          }} />
+                        <div className="relative">
+                          <input type="number" className="form-input text-[11px] py-1 pr-6" placeholder="Qté" value={line.unitQty ?? ''}
+                            onChange={(e) => {
+                              const lines = [...importData.lines];
+                              lines[idx] = { ...lines[idx], unitQty: e.target.value ? parseFloat(e.target.value) : null };
+                              setImportData((d) => ({ ...d, lines }));
+                            }} />
+                          {line.unitType && <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-gray-400">{line.unitType === 'grammes' ? 'g' : 'gr.'}</span>}
+                        </div>
                       </div>
                       <div>
-                        <input type="number" step="0.01" className="form-input text-xs py-1" placeholder="Prix €" value={line.unitPrice ?? ''}
-                          onChange={(e) => {
-                            const lines = [...importData.lines];
-                            lines[idx] = { ...lines[idx], unitPrice: e.target.value ? parseFloat(e.target.value) : null };
-                            setImportData((d) => ({ ...d, lines }));
-                          }} />
+                        <div className="relative">
+                          <input type="number" step="0.01" className="form-input text-[11px] py-1 pr-4" placeholder="P.U." value={line.unitPrice ?? ''}
+                            onChange={(e) => {
+                              const lines = [...importData.lines];
+                              lines[idx] = { ...lines[idx], unitPrice: e.target.value ? parseFloat(e.target.value) : null };
+                              setImportData((d) => ({ ...d, lines }));
+                            }} />
+                          <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-gray-400">€</span>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Suggestions si pas de match */}
                     {line.matchCandidates?.length > 0 && !line.cultivarId && (
-                      <div className="flex flex-wrap gap-1 mt-1.5">
+                      <div className="px-3 pb-2 flex flex-wrap gap-1">
                         {line.matchCandidates.map((c) => (
-                          <button key={c.cultivarId} type="button" className="text-[10px] text-blue-600 hover:underline"
+                          <button key={c.cultivarId} type="button"
+                            className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full hover:bg-blue-100 transition-colors"
                             onClick={() => {
                               const lines = [...importData.lines];
                               lines[idx] = { ...lines[idx], cultivarId: c.cultivarId };
@@ -243,11 +286,13 @@ function SeedAddForm({ cultivars, onSuccess, onCancel, seed }) {
           )}
         </div>
 
-        <div className="flex gap-2 pt-2">
-          <button type="button" onClick={() => setImportData(null)} className="btn-secondary">Retour</button>
+        {/* Actions */}
+        <div className="flex gap-2 pt-1">
+          <button type="button" onClick={() => setImportData(null)} className="btn-secondary text-sm">Retour</button>
           <button type="button" onClick={handleConfirmImport} disabled={confirmLoading || !importData.supplier.name || !importData.invoice.number}
-            className="btn-primary flex-1 flex items-center justify-center gap-2">
-            {confirmLoading && <LoadingSpinner size="sm" />} Confirmer
+            className="btn-primary flex-1 flex items-center justify-center gap-2 text-sm">
+            {confirmLoading && <LoadingSpinner size="sm" />}
+            Importer {matched > 0 && `(${matched} graines)`}
           </button>
         </div>
       </div>

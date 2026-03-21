@@ -15,53 +15,30 @@ function getWeatherEmoji(rain, tempMax, sunshine) {
 function WeatherDay({ day, isToday = false }) {
   const emoji = getWeatherEmoji(day.rain ?? 0, day.temp_max ?? 15, day.sunshine_hours ?? 0);
   const dateLabel = isToday
-    ? "Aujourd'hui"
+    ? "Auj."
     : format(parseISO(day.date), 'EEE d', { locale: fr });
 
   return (
     <div
       className={[
-        'card flex flex-col items-center gap-1.5 p-3 sm:p-4 text-center min-w-[100px] sm:min-w-[120px] flex-shrink-0 snap-start',
+        'card flex flex-col items-center gap-1 p-2 sm:p-4 text-center',
         isToday ? 'ring-2 ring-[#1B5E20]' : '',
       ].join(' ')}
       aria-label={`Météo du ${dateLabel}`}
     >
-      {/* Gel */}
       {day.frost && (
-        <span
-          className="inline-block text-[10px] sm:text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-semibold"
-          aria-label="Risque de gel"
-        >
-          ⚠️ Gel
-        </span>
+        <span className="text-[9px] bg-blue-100 text-blue-700 px-1 py-0.5 rounded-full font-semibold">⚠️ Gel</span>
       )}
-
       <p className="text-[10px] sm:text-xs font-medium text-gray-500 capitalize">{dateLabel}</p>
-      <span className="text-2xl sm:text-4xl" aria-hidden="true">{emoji}</span>
-
-      {/* Températures */}
-      <div className="flex gap-1.5 text-xs sm:text-sm">
-        <span className="font-bold text-orange-500" aria-label={`Température maximale ${day.temp_max}°C`}>
-          {day.temp_max !== undefined ? `${day.temp_max}°` : '–'}
-        </span>
-        <span className="text-blue-400" aria-label={`Température minimale ${day.temp_min}°C`}>
-          {day.temp_min !== undefined ? `${day.temp_min}°` : '–'}
-        </span>
+      <span className="text-xl sm:text-3xl" aria-hidden="true">{emoji}</span>
+      <div className="flex gap-1 text-[11px] sm:text-sm">
+        <span className="font-bold text-orange-500">{day.temp_max !== undefined ? `${day.temp_max}°` : '–'}</span>
+        <span className="text-blue-400">{day.temp_min !== undefined ? `${day.temp_min}°` : '–'}</span>
       </div>
-
-      {/* Pluie */}
-      {day.rain !== undefined && (
-        <div className="text-[10px] sm:text-xs text-gray-500" aria-label={`Précipitations ${day.rain} mm`}>
-          🌧️ {day.rain} mm
-        </div>
-      )}
-
-      {/* Ensoleillement */}
-      {day.sunshine_hours !== undefined && (
-        <div className="text-[10px] sm:text-xs text-gray-500" aria-label={`Ensoleillement ${day.sunshine_hours}h`}>
-          ☀️ {day.sunshine_hours}h
-        </div>
-      )}
+      <div className="flex gap-2 text-[9px] sm:text-xs text-gray-400">
+        {day.rain !== undefined && <span>🌧️{day.rain}mm</span>}
+        {day.sunshine_hours !== undefined && <span>☀️{day.sunshine_hours}h</span>}
+      </div>
     </div>
   );
 }
@@ -138,7 +115,7 @@ export default function WeatherWidget() {
       <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-3">
         Météo
       </h2>
-      <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
         {today && <WeatherDay day={today} isToday />}
         {forecast.map((day) => (
           <WeatherDay key={day.date} day={day} />

@@ -14,8 +14,12 @@ const {
 } = require('../controllers/seedController');
 
 // Configuration de multer — stockage permanent dans uploads/invoices
+const fs = require('fs');
+const invoicesDir = path.join(__dirname, '../../uploads/invoices');
+if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir, { recursive: true });
+
 const pdfStorage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, '../../uploads/invoices')),
+  destination: (req, file, cb) => cb(null, invoicesDir),
   filename: (req, file, cb) => {
     const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, unique + path.extname(file.originalname));

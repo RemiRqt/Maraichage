@@ -101,8 +101,10 @@ function SeedAddForm({ cultivars, onSuccess, onCancel, seed }) {
         lines: parseRes.data.lines.map((l) => ({ ...l })),
       });
       setImportSuppliers(suppliersRes.data || []);
-    } catch {
-      toast.error("Erreur lors de l'analyse du PDF");
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Erreur lors de l'analyse du PDF";
+      toast.error(msg);
+      console.error('Import PDF error:', err.response?.data || err);
     } finally {
       setImportLoading(false);
     }

@@ -107,13 +107,13 @@ export default function DashboardPage() {
 
       {/* Statistiques résumées */}
       {loading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4" aria-busy="true" aria-label="Chargement des statistiques">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4" aria-busy="true" aria-label="Chargement des statistiques">
           {[...Array(4)].map((_, i) => (
             <CardSkeleton key={i} />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <StatCard
             icon={SparklesIcon}
             label="Récoltes à faire"

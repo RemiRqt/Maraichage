@@ -509,17 +509,17 @@ function PrevisionnelTab({ seasonId }) {
                 key={idx}
                 onClick={() => setCurrentWeekIdx(idx)}
                 className={[
-                  'flex flex-col items-center gap-0.5 py-1.5 rounded-lg transition-colors',
+                  'flex flex-col items-center gap-0.5 px-2 py-2 rounded-lg transition-colors min-w-[44px]',
                   isCurrent ? 'bg-green-100 ring-1 ring-green-400' : hasItems ? 'hover:bg-gray-100' : 'opacity-25',
                 ].join(' ')}
                 title={`${w.sublabel} — ${w.totalKg.toFixed(1)} kg`}
               >
-                <div className="w-5 bg-gray-100 rounded-sm overflow-hidden flex items-end" style={{ height: '28px' }}>
+                <div className="w-6 bg-gray-100 rounded-sm overflow-hidden flex items-end" style={{ height: '32px' }}>
                   <div className={`w-full rounded-sm ${isCurrent ? 'bg-green-600' : 'bg-green-400'}`} style={{ height: `${barH}px` }} />
                 </div>
-                <span className={`text-[10px] leading-tight ${isCurrent ? 'font-bold text-green-800' : 'text-gray-500'}`}>{w.label}</span>
+                <span className={`text-[11px] leading-tight ${isCurrent ? 'font-bold text-green-800' : 'text-gray-500'}`}>{w.label}</span>
                 {hasItems && (
-                  <span className={`text-[8px] leading-none ${isCurrent ? 'text-green-600 font-semibold' : 'text-gray-400'}`}>
+                  <span className={`text-[9px] leading-none ${isCurrent ? 'text-green-600 font-semibold' : 'text-gray-400'}`}>
                     {w.totalKg.toFixed(0)}kg
                   </span>
                 )}

@@ -114,7 +114,7 @@ export default function WeatherWidget() {
 
   return (
     <section aria-label="Météo">
-      <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2">
+      <div className="flex gap-2 sm:gap-3 overflow-x-auto p-1 -m-1">
         {today && <WeatherDay day={today} isToday />}
         {forecast.map((day) => (
           <WeatherDay key={day.date} day={day} />

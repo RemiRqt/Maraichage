@@ -347,11 +347,11 @@ function SeedAddForm({ cultivars, onSuccess, onCancel, seed }) {
             </div>
             <div>
               <label className="form-label">Qté initiale</label>
-              <input type="number" min="0" value={form.initial_quantity} onChange={(e) => setForm((f) => ({ ...f, initial_quantity: e.target.value }))} className="form-input" />
+              <input type="number" min="0" step="1" value={form.initial_quantity} onChange={(e) => setForm((f) => ({ ...f, initial_quantity: e.target.value }))} className="form-input" placeholder="0" />
             </div>
             <div>
               <label className="form-label">Stock actuel</label>
-              <input type="number" min="0" value={form.quantity} onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))} className="form-input" />
+              <input type="number" min="0" step="1" value={form.quantity} onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))} className="form-input" placeholder="0" />
             </div>
             <div>
               <label className="form-label">URL rachat</label>

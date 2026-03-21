@@ -125,6 +125,7 @@ export default function BedDetailPage() {
 
         {plantings.length === 0 ? (
           <div className="card p-6 text-center text-gray-400">
+            <p className="text-3xl mb-2" aria-hidden="true">🌱</p>
             <p>Aucune plantation cette saison</p>
             <button onClick={() => setModalOpen(true)} className="btn-ghost mt-3 text-sm">
               + Ajouter la première plantation

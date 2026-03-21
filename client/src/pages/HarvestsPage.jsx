@@ -107,6 +107,7 @@ function SaisiesTab({ seasonId }) {
         </div>
       ) : (
         <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm" aria-label="Liste des récoltes">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
@@ -155,6 +156,7 @@ function SaisiesTab({ seasonId }) {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

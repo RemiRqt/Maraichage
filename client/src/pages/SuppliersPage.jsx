@@ -34,6 +34,9 @@ function SupplierForm({ supplier, onSuccess, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.error('Le nom est requis.');
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error('Email invalide.');
+    if (form.siret && !/^\d{14}$/.test(form.siret.replace(/\s/g, ''))) return toast.error('Le SIRET doit contenir 14 chiffres.');
+    if (form.phone && !/^[\d\s\+\.\-]{10,}$/.test(form.phone)) return toast.error('Numéro de téléphone invalide.');
     setLoading(true);
     try {
       if (supplier) {

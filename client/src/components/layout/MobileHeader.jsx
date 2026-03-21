@@ -128,7 +128,7 @@ export default function MobileHeader() {
                       }`
                     }
                   >
-                    <span className="text-lg">{emoji}</span>
+                    <span className="text-lg" aria-hidden="true">{emoji}</span>
                     <span>{label}</span>
                   </NavLink>
                 ))}

@@ -26,7 +26,7 @@ export default function BottomNav() {
             >
               {({ isActive }) => (
                 <>
-                  <span className={`text-xl ${isActive ? '' : 'opacity-70'}`}>{emoji}</span>
+                  <span className={`text-xl ${isActive ? '' : 'opacity-70'}`} aria-hidden="true">{emoji}</span>
                   <span className={`text-[10px] font-medium leading-none ${isActive ? 'text-[#1B5E20]' : 'text-gray-400'}`}>
                     {label}
                   </span>

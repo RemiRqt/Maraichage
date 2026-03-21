@@ -146,7 +146,7 @@ function NurseryChartForm({ data, onSave, onCancel, onDelete, saving }) {
             <input type="text" value={s.containerType} onChange={(e) => { const arr = [...repotStages]; arr[i].containerType = e.target.value; setRepotStages(arr); }} className="form-input text-sm py-1 flex-1" placeholder="Contenant" />
             <input type="number" value={s.daysAfterSowing} onChange={(e) => { const arr = [...repotStages]; arr[i].daysAfterSowing = Number(e.target.value); setRepotStages(arr); }} className="form-input text-sm py-1 w-20" placeholder="Jours" />
             <span className="text-xs text-gray-400">j</span>
-            <button type="button" onClick={() => setRepotStages((arr) => arr.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 p-0.5">
+            <button type="button" onClick={() => setRepotStages((arr) => arr.filter((_, j) => j !== i))} className="text-red-500 hover:text-red-600 p-1">
               <TrashIcon className="h-3.5 w-3.5" />
             </button>
           </div>

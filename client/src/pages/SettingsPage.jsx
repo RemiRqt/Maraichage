@@ -144,7 +144,7 @@ function ProfileTab() {
 
 // --- Onglet Saisons ---
 function SeasonsTab() {
-  const { seasons, activeSeason, selectSeason } = useSeason();
+  const { seasons, activeSeason, selectSeason, loadSeasons } = useSeason();
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ name: '', start_date: '', end_date: '' });
   const [loading, setLoading] = useState(false);
@@ -155,7 +155,7 @@ function SeasonsTab() {
       await api.post('/seasons', form);
       toast.success('Saison créée');
       setModalOpen(false);
-      window.location.reload();
+      await loadSeasons();
     } catch {
       toast.error('Erreur lors de la création de la saison');
     }
@@ -165,7 +165,7 @@ function SeasonsTab() {
     try {
       await api.patch(`/seasons/${season.id}/archive`);
       toast.success('Saison archivée');
-      window.location.reload();
+      await loadSeasons();
     } catch {
       toast.error("Impossible d'archiver la saison");
     }
@@ -175,7 +175,7 @@ function SeasonsTab() {
     try {
       await api.post(`/seasons/${season.id}/duplicate`);
       toast.success('Saison dupliquée');
-      window.location.reload();
+      await loadSeasons();
     } catch {
       toast.error("Impossible de dupliquer la saison");
     }

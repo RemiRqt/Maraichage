@@ -18,7 +18,10 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { getSpeciesIcon } from '../utils/speciesIcons';
 
 // URL de base du serveur (sans /api/v1)
-const SERVER_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1').replace(/\/api\/v1$/, '');
+const SERVER_URL = (() => {
+  const url = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+  return url.replace(/\/api\/v\d+\/?$/, '');
+})();
 
 const TABS = [
   { key: 'invoices', label: 'Factures' },
@@ -157,7 +160,7 @@ function InvoicesTab({ invoices, onDeleteInvoice }) {
                   )}
                   <button
                     onClick={() => onDeleteInvoice(inv)}
-                    className="btn-ghost p-1 text-red-400 hover:text-red-600"
+                    className="btn-ghost p-1.5 text-red-500 hover:text-red-600"
                     aria-label="Supprimer"
                   >
                     <TrashIcon className="h-3.5 w-3.5" />
@@ -232,58 +235,38 @@ function StockTab({ supplierId }) {
   }
 
   return (
-    <div className="card overflow-hidden">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
-            <th className="text-left px-4 py-3 font-semibold text-gray-600">Cultivar</th>
-            <th className="text-left px-4 py-3 font-semibold text-gray-600">Espèce</th>
-            <th className="text-right px-4 py-3 font-semibold text-gray-600">Stock</th>
-            <th className="text-right px-4 py-3 font-semibold text-gray-600">Qté initiale</th>
-            <th className="text-right px-4 py-3 font-semibold text-gray-600">Prix</th>
-            <th className="text-left px-4 py-3 font-semibold text-gray-600">Lot</th>
-            <th className="text-left px-4 py-3 font-semibold text-gray-600">Achat</th>
-            <th className="text-left px-4 py-3 font-semibold text-gray-600">Expiration</th>
-          </tr>
-        </thead>
-        <tbody>
-          {stock.map((s) => {
-            const pct = s.initial_quantity > 0 ? Math.round((s.quantity / s.initial_quantity) * 100) : null;
-            return (
-              <tr key={s.id} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">{getSpeciesIcon(s.species_name)}</span>
-                    <span className="font-medium text-gray-900">{s.cultivar_name || '—'}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-gray-500">{s.species_name || '—'}</td>
-                <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    <span className="font-semibold text-gray-900">{s.quantity}</span>
-                    {pct !== null && (
-                      <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${pct > 50 ? 'bg-green-100 text-green-700' : pct > 20 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                        {pct}%
-                      </span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-right text-gray-500">{s.initial_quantity}</td>
-                <td className="px-4 py-3 text-right text-gray-700">
-                  {s.unit_price != null ? `${parseFloat(s.unit_price).toFixed(2)} €` : '—'}
-                </td>
-                <td className="px-4 py-3 text-xs text-gray-500 font-mono">{s.lot_number || '—'}</td>
-                <td className="px-4 py-3 text-xs text-gray-500">
-                  {s.purchase_date ? format(parseISO(s.purchase_date.split('T')[0]), 'dd/MM/yy') : '—'}
-                </td>
-                <td className="px-4 py-3 text-xs text-gray-500">
-                  {s.expiry_date ? format(parseISO(s.expiry_date.split('T')[0]), 'dd/MM/yy') : '—'}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className="space-y-2">
+      {stock.map((s) => {
+        const pct = s.initial_quantity > 0 ? Math.round((s.quantity / s.initial_quantity) * 100) : null;
+        const pctColor = pct > 50 ? 'bg-green-100 text-green-700' : pct > 20 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700';
+        const barColor = pct > 50 ? 'bg-green-500' : pct > 20 ? 'bg-orange-400' : 'bg-red-500';
+        return (
+          <div key={s.id} className="card p-3">
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <span className="text-lg flex-shrink-0" aria-hidden="true">{getSpeciesIcon(s.species_name)}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">{s.cultivar_name || '—'}</p>
+                <p className="text-[10px] text-gray-400">{s.species_name || ''}</p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-sm font-bold text-gray-900">{s.quantity} <span className="text-xs font-normal text-gray-400">/ {s.initial_quantity}</span></p>
+                {pct !== null && <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${pctColor}`}>{pct}%</span>}
+              </div>
+            </div>
+            {pct !== null && (
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1.5">
+                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(100, pct)}%` }} />
+              </div>
+            )}
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-gray-400">
+              {s.unit_price != null && <span>{parseFloat(s.unit_price).toFixed(2)} €</span>}
+              {s.lot_number && <span>Lot: {s.lot_number}</span>}
+              {s.purchase_date && <span>Achat: {format(parseISO(s.purchase_date.split('T')[0]), 'dd/MM/yy')}</span>}
+              {s.expiry_date && <span>Exp: {format(parseISO(s.expiry_date.split('T')[0]), 'dd/MM/yy')}</span>}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

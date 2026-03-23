@@ -139,11 +139,11 @@ export default function BedDetailPage() {
                 <div
                   key={planting.id}
                   className="card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => navigate(`/plantings/${planting.id}`)}
+                  onClick={() => navigate(`/plantations/${planting.id}`)}
                   role="button"
                   aria-label={`Voir la plantation de ${planting.cultivar?.name}`}
                   tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/plantings/${planting.id}`)}
+                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/plantations/${planting.id}`)}
                 >
                   <div>
                     <span className="font-semibold text-gray-900">{planting.cultivar?.name}</span>

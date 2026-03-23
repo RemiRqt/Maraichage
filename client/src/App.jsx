@@ -33,6 +33,7 @@ import PlanningPage from './pages/PlanningPage';
 import SuppliersPage from './pages/SuppliersPage';
 import SupplierDetailPage from './pages/SupplierDetailPage';
 import ChartsPage from './pages/ChartsPage';
+import LateTasksPage from './pages/LateTasksPage';
 
 const App = () => {
   return (
@@ -67,6 +68,7 @@ const App = () => {
                 <Route path="/pepiniere" element={<NurseryPage />} />
                 <Route path="/calendrier" element={<CalendarPage />} />
                 <Route path="/taches" element={<TasksPage />} />
+                <Route path="/taches/retard" element={<LateTasksPage />} />
                 <Route path="/recoltes" element={<HarvestsPage />} />
                 <Route path="/graines" element={<SeedsPage />} />
                 <Route path="/journal" element={<JournalPage />} />

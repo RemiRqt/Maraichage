@@ -92,7 +92,7 @@ function TaskCard({ task, onComplete, onUncomplete, onEditDate, completingId }) 
               </span>
             )}
             {isDone && task.actualDurationHours && (
-              <span className="text-[10px] text-green-600">Réel: {task.actualDurationHours}h</span>
+              <span className="text-[10px] text-green-600">Réel: {formatDuration(Math.round(task.actualDurationHours * 60))}</span>
             )}
             {isLate && <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Retard</span>}
             {!isDone && task.scheduledDate && (
@@ -152,7 +152,7 @@ function WorkloadSummary({ tasks, label, viewMode = 'day' }) {
           {lateCount > 0 && <span className="text-red-600 font-bold">{lateCount} retard</span>}
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="text-lg sm:text-xl font-bold text-gray-900">{hours.toFixed(1)}h</p>
+          <p className="text-lg sm:text-xl font-bold text-gray-900">{formatDuration(totalMin) || '0h'}</p>
           <p className="text-[9px] text-gray-400">{objectifLabel}</p>
         </div>
       </div>
@@ -476,9 +476,10 @@ export default function TasksPage() {
 
   const navigate = useNavigate();
 
-  // Modal de confirmation avec durée
-  const [completeModal, setCompleteModal] = useState(null); // task being completed
-  const [durationInput, setDurationInput] = useState('');
+  // Modal de confirmation avec durée h + min
+  const [completeModal, setCompleteModal] = useState(null);
+  const [durationH, setDurationH] = useState('');
+  const [durationM, setDurationM] = useState('');
 
   // Modal édition date
   const [dateEditTask, setDateEditTask] = useState(null);
@@ -486,7 +487,8 @@ export default function TasksPage() {
 
   const handleCompleteClick = (task) => {
     const est = estimateMinutes(task);
-    setDurationInput(est > 0 ? (est / 60).toFixed(1) : '');
+    setDurationH(est > 0 ? String(Math.floor(est / 60)) : '');
+    setDurationM(est > 0 ? String(est % 60) : '');
     setCompleteModal(task);
   };
 
@@ -496,7 +498,8 @@ export default function TasksPage() {
     setCompletingId(task.id);
     try {
       const body = {};
-      if (durationInput) body.actualDurationHours = parseFloat(durationInput);
+      const totalH = (parseInt(durationH) || 0) + (parseInt(durationM) || 0) / 60;
+      if (totalH > 0) body.actualDurationHours = Math.round(totalH * 100) / 100;
       await api.patch(`/tasks/${task.id}/complete`, body);
       toast.success(`${task.taskTemplate?.templateName || task.name} validé`);
       fetchData();
@@ -590,9 +593,15 @@ export default function TasksPage() {
               Valider <strong>{completeModal.taskTemplate?.templateName || completeModal.name}</strong> ?
             </p>
             <div>
-              <label className="form-label">Temps passé réel (heures)</label>
-              <input type="number" step="0.1" min="0" value={durationInput} onChange={(e) => setDurationInput(e.target.value)}
-                className="form-input" placeholder="Ex: 1.5" />
+              <label className="form-label">Temps passé réel</label>
+              <div className="flex items-center gap-2">
+                <input type="number" min="0" step="1" value={durationH} onChange={(e) => setDurationH(e.target.value)}
+                  className="form-input w-20 text-center" placeholder="0" />
+                <span className="text-sm text-gray-500">h</span>
+                <input type="number" min="0" max="59" step="5" value={durationM} onChange={(e) => setDurationM(e.target.value)}
+                  className="form-input w-20 text-center" placeholder="00" />
+                <span className="text-sm text-gray-500">min</span>
+              </div>
             </div>
             <div className="flex gap-2">
               <button onClick={() => setCompleteModal(null)} className="btn-secondary flex-1">Annuler</button>

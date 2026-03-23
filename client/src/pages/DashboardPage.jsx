@@ -152,7 +152,7 @@ export default function DashboardPage() {
             label="Tâches en retard"
             value={stats?.nbTachesEnRetard ?? '–'}
             color="orange"
-            onClick={() => navigate('/taches')}
+            onClick={() => navigate('/taches/retard')}
           />
         </div>
       )}

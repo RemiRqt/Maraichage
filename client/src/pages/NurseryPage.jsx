@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { format, parseISO, differenceInDays, addDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -217,6 +218,7 @@ function BatchCard({ batch, onAdvance, onGermination, advancingId }) {
 export default function NurseryPage() {
   const { activeSeason } = useSeason();
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [batches, setBatches] = useState([]);
   const [cultivars, setCultivars] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -225,6 +227,19 @@ export default function NurseryPage() {
   const [germModalBatch, setGermModalBatch] = useState(null);
   const [germRate, setGermRate] = useState('');
   const [advancingId, setAdvancingId] = useState(null);
+
+  // Defaults from query params (coming from task validation)
+  const defaultCultivarId = searchParams.get('cultivar_id') || '';
+  const defaultPlantingId = searchParams.get('planting_id') || '';
+
+  // Auto-open modal if redirected from task completion
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setModalOpen(true);
+      searchParams.delete('new');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []);
 
   const fetchData = useCallback(async () => {
     if (!activeSeason?.id) return;
@@ -353,10 +368,12 @@ export default function NurseryPage() {
       )}
 
       {/* Modal nouveau lot */}
-      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="Nouveau lot de pépinière" size="lg">
+      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); setSearchParams({}, { replace: true }); }} title="Nouveau lot de pépinière" size="lg">
         <NurseryBatchForm
-          onSuccess={() => { setModalOpen(false); fetchData(); toast.success('Lot créé'); }}
-          onCancel={() => setModalOpen(false)}
+          defaultCultivarId={defaultCultivarId}
+          defaultPlantingId={defaultPlantingId}
+          onSuccess={() => { setModalOpen(false); setSearchParams({}, { replace: true }); fetchData(); toast.success('Lot créé'); }}
+          onCancel={() => { setModalOpen(false); setSearchParams({}, { replace: true }); }}
         />
       </Modal>
 

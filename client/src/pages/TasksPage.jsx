@@ -504,7 +504,9 @@ export default function TasksPage() {
       // Redirect based on task type
       const tName = (task.taskTemplate?.templateName || task.taskTemplate?.name || task.name || '').toLowerCase();
       if (tName.includes('semis') && tName.includes('pépi')) {
-        navigate('/pepiniere');
+        const cultivarId = task.planting?.cultivar?.id || '';
+        const plantingId = task.plantingId || '';
+        navigate(`/pepiniere?new=1&cultivar_id=${cultivarId}&planting_id=${plantingId}`);
       } else if (tName.includes('récolte') || tName.includes('recolte')) {
         navigate('/recoltes');
       }

@@ -17,11 +17,11 @@ const CONTAINER_TYPES = [
   { value: 'AUTRE', label: 'Autre', cells: 0 },
 ];
 
-export default function NurseryBatchForm({ batch = null, onSuccess, onCancel }) {
+export default function NurseryBatchForm({ batch = null, defaultCultivarId = '', defaultPlantingId = '', onSuccess, onCancel }) {
   const { activeSeason } = useSeason();
 
   const [form, setForm] = useState({
-    planting_id: batch?.plantingId ?? '',
+    planting_id: batch?.plantingId ?? defaultPlantingId,
     sowing_date: batch?.sowingDate ? batch.sowingDate.split('T')[0] : format(new Date(), 'yyyy-MM-dd'),
     container_type: batch?.containerType ?? 'ALVEOLES_60',
     container_count: batch?.containerCount ?? '',
@@ -30,7 +30,7 @@ export default function NurseryBatchForm({ batch = null, onSuccess, onCancel }) 
   });
 
   const [selectedSpeciesId, setSelectedSpeciesId] = useState('');
-  const [selectedCultivarId, setSelectedCultivarId] = useState(batch?.cultivarId ?? '');
+  const [selectedCultivarId, setSelectedCultivarId] = useState(batch?.cultivarId ?? defaultCultivarId);
   const [selectedSeedId, setSelectedSeedId] = useState(batch?.seedInventoryId ?? '');
 
   const [species, setSpecies] = useState([]);
@@ -72,18 +72,44 @@ export default function NurseryBatchForm({ batch = null, onSuccess, onCancel }) 
     load();
   }, [activeSeason?.id]);
 
-  // Charger les lots de graines du cultivar sélectionné
+  // Charger les lots de graines + la fiche technique du cultivar sélectionné
   useEffect(() => {
     if (!selectedCultivarId) { setSeeds([]); setSelectedSeedId(''); return; }
     api.get('/seeds', { params: { cultivar_id: selectedCultivarId } })
       .then((r) => {
         const avail = (r.data || []).filter((s) => s.quantity > 0);
         setSeeds(avail);
-        // Auto-sélectionner le seul lot s'il n'y en a qu'un
         if (avail.length === 1) setSelectedSeedId(avail[0].id);
         else setSelectedSeedId('');
       })
       .catch(() => setSeeds([]));
+
+    // Charger la fiche technique pour pré-remplir le contenant
+    api.get('/culture-sheets', { params: { species_id: '' } })
+      .then((r) => {
+        const sheets = r.data || [];
+        const sheet = sheets.find((s) => {
+          // Trouver la fiche dont l'espèce correspond au cultivar
+          const cultivar = cultivarsWithSeeds.find((c) => c.cultivar_id === selectedCultivarId);
+          return cultivar && s.species?.name === cultivar.species_name;
+        });
+        if (sheet?.nurseryChart) {
+          const nc = sheet.nurseryChart;
+          // Mapper le containerType de la fiche vers les valeurs du select
+          const containerType = nc.containerType || '';
+          const match = CONTAINER_TYPES.find((ct) =>
+            containerType.toLowerCase().includes(ct.label.toLowerCase().split(' ')[0])
+          );
+          if (match && !batch) {
+            setForm((f) => ({
+              ...f,
+              container_type: match.value,
+              cells_per_container: match.cells || nc.seedsPerCell || f.cells_per_container,
+            }));
+          }
+        }
+      })
+      .catch(() => {});
   }, [selectedCultivarId]);
 
   // Cultivars filtrés par espèce sélectionnée parmi ceux qui ont du stock

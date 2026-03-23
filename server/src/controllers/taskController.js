@@ -300,11 +300,14 @@ const complete = async (req, res, next) => {
   }
 };
 
-// PATCH /:id/uncomplete — Annule la validation d'une tâche
+// PATCH /:id/uncomplete — Annule la validation d'une tâche et revert le statut de la plantation
 const uncomplete = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.task.findUnique({ where: { id } });
+    const existing = await prisma.task.findUnique({
+      where: { id },
+      include: { taskTemplate: true, planting: true },
+    });
     if (!existing) return res.status(404).json({ message: 'Tâche introuvable' });
     if (existing.status !== 'FAIT') return res.status(400).json({ message: 'La tâche n\'est pas terminée' });
 
@@ -312,6 +315,31 @@ const uncomplete = async (req, res, next) => {
       where: { id },
       data: { status: 'A_FAIRE', completedDate: null, actualDurationHours: null },
     });
+
+    // Revert le statut de la plantation si la tâche y est liée
+    if (existing.plantingId && existing.taskTemplate) {
+      const templateName = (existing.taskTemplate.templateName || existing.taskTemplate.name || '').toLowerCase().trim();
+      const plantingUpdate = {};
+
+      if (templateName.includes('semis') && (templateName.includes('pépi') || templateName.includes('direct'))) {
+        plantingUpdate.status = 'PLANIFIE';
+        plantingUpdate.sowingDate = null;
+      } else if (templateName.includes('transplant')) {
+        plantingUpdate.status = 'SEME';
+        plantingUpdate.transplantDate = null;
+      } else if (templateName.includes('récolte') || templateName.includes('recolte')) {
+        plantingUpdate.status = 'TRANSPLANTE';
+        plantingUpdate.actualFirstHarvestDate = null;
+      }
+
+      if (Object.keys(plantingUpdate).length > 0) {
+        await prisma.planting.update({
+          where: { id: existing.plantingId },
+          data: plantingUpdate,
+        });
+      }
+    }
+
     res.json(task);
   } catch (err) {
     next(err);

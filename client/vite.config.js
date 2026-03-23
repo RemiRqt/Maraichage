@@ -15,9 +15,9 @@ export default defineConfig({
       srcDir: 'public',
       filename: 'service-worker.js',
       manifest: {
-        name: 'MalaMaraichage',
+        name: 'Maraîchage — Domaine de Malassise',
         short_name: 'Maraîchage',
-        description: 'Gestion de maraîchage heirloom — Mormant 77720',
+        description: 'Maraichage, Domaine de Malassise',
         theme_color: '#1B5E20',
         background_color: '#FAFAFA',
         display: 'standalone',
@@ -25,7 +25,7 @@ export default defineConfig({
         start_url: '/',
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
       workbox: {

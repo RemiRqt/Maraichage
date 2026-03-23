@@ -107,7 +107,7 @@ export default function MobileHeader() {
           </div>
 
           {/* Sections */}
-          <nav className="overflow-y-auto h-[calc(100vh-52px)] pb-20">
+          <nav className="overflow-y-auto h-[calc(100vh-52px)] pb-28">
             {menuSections.map((section, i) => (
               <div key={i}>
                 {section.label && (

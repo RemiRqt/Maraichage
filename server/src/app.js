@@ -34,6 +34,7 @@ const settingsRoutes = require('./routes/settings');
 const calendarRoutes = require('./routes/calendar');
 const supplierRoutes = require('./routes/suppliers');
 const invoiceRoutes = require('./routes/invoices');
+const exploitationRoutes = require('./routes/exploitation');
 
 // Middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -106,6 +107,7 @@ app.use(`${API_PREFIX}/settings`, settingsRoutes);
 app.use(`${API_PREFIX}/calendar`, calendarRoutes);
 app.use(`${API_PREFIX}/suppliers`, supplierRoutes);
 app.use(`${API_PREFIX}/invoices`, invoiceRoutes);
+app.use(`${API_PREFIX}/exploitation`, exploitationRoutes);
 
 // ---- Servir le frontend React en production ----
 if (process.env.NODE_ENV === 'production') {

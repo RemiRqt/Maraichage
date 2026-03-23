@@ -7,6 +7,7 @@ const {
   create,
   update,
   complete,
+  uncomplete,
   remove,
 } = require('../controllers/taskController');
 
@@ -37,6 +38,9 @@ router.put('/:id', update);
 router.patch('/:id/complete', [
   body('actualDurationHours').optional().isFloat({ min: 0 }),
 ], complete);
+
+// PATCH /:id/uncomplete — Annule la validation d'une tâche
+router.patch('/:id/uncomplete', uncomplete);
 
 // DELETE /:id — Supprime une tâche
 router.delete('/:id', remove);

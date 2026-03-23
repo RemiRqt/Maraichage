@@ -300,6 +300,24 @@ const complete = async (req, res, next) => {
   }
 };
 
+// PATCH /:id/uncomplete — Annule la validation d'une tâche
+const uncomplete = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const existing = await prisma.task.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ message: 'Tâche introuvable' });
+    if (existing.status !== 'FAIT') return res.status(400).json({ message: 'La tâche n\'est pas terminée' });
+
+    const task = await prisma.task.update({
+      where: { id },
+      data: { status: 'A_FAIRE', completedDate: null, actualDurationHours: null },
+    });
+    res.json(task);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // DELETE /:id — Supprime une tâche
 const remove = async (req, res, next) => {
   try {
@@ -313,4 +331,4 @@ const remove = async (req, res, next) => {
   }
 };
 
-module.exports = { list, create, update, complete, remove };
+module.exports = { list, create, update, complete, uncomplete, remove };

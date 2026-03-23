@@ -8,8 +8,9 @@ import {
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import {
-  PlusIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, ClockIcon,
+  PlusIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, ClockIcon, XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useSeason } from '../context/SeasonContext';
 import Modal from '../components/ui/Modal';
@@ -58,8 +59,8 @@ function formatDuration(minutes) {
   return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`;
 }
 
-// Carte de tâche — grosse, tactile, swipeable
-function TaskCard({ task, onComplete, completingId }) {
+// Carte de tâche
+function TaskCard({ task, onComplete, onUncomplete, onEditDate, completingId }) {
   const meta = getTaskMeta(task);
   const isDone = task.status === 'FAIT';
   const isLate = task.status === 'A_FAIRE' && task.scheduledDate && isPast(parseISO(task.scheduledDate)) && !isToday(parseISO(task.scheduledDate));
@@ -69,10 +70,8 @@ function TaskCard({ task, onComplete, completingId }) {
 
   return (
     <div className={`flex items-stretch rounded-xl border overflow-hidden transition-all ${isDone ? 'opacity-50 border-gray-200' : isLate ? 'border-red-300 shadow-sm' : 'border-gray-200 shadow-sm'}`}>
-      {/* Bande de couleur gauche */}
       <div className={`w-1 sm:w-1.5 flex-shrink-0 ${isDone ? 'bg-gray-300' : isLate ? 'bg-red-500' : meta.color}`} />
 
-      {/* Contenu */}
       <div className="flex-1 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-3 min-w-0">
         <span className="text-lg sm:text-xl flex-shrink-0" title={species || ''}>
           {species ? getSpeciesIcon(species) : meta.icon}
@@ -82,33 +81,30 @@ function TaskCard({ task, onComplete, completingId }) {
             {task.taskTemplate?.templateName || task.name}
           </p>
           <div className="flex flex-wrap items-center gap-x-1 sm:gap-x-2 gap-y-0.5 mt-0.5">
-            {species && (
-              <span className="text-[10px] sm:text-xs text-gray-500">{species}</span>
+            {species && <span className="text-[10px] sm:text-xs text-gray-500">{species}</span>}
+            {cultivar && cultivar !== species && <span className="text-[10px] sm:text-xs text-gray-400 hidden sm:inline">· {cultivar}</span>}
+            {task.bed?.name && <span className="text-[10px] sm:text-xs text-gray-400">· {task.bed.name}</span>}
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+            {est > 0 && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-400">
+                <ClockIcon className="h-3 w-3" />{formatDuration(est)}
+              </span>
             )}
-            {cultivar && cultivar !== species && (
-              <span className="text-[10px] sm:text-xs text-gray-400 hidden sm:inline">· {cultivar}</span>
+            {isDone && task.actualDurationHours && (
+              <span className="text-[10px] text-green-600">Réel: {task.actualDurationHours}h</span>
             )}
-            {task.bed?.name && (
-              <span className="text-[10px] sm:text-xs text-gray-400">· {task.bed.name}</span>
+            {isLate && <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Retard</span>}
+            {!isDone && task.scheduledDate && (
+              <button onClick={() => onEditDate(task)} className="text-[10px] text-blue-500 hover:underline">
+                {format(parseISO(task.scheduledDate), 'dd/MM', { locale: fr })}
+              </button>
             )}
           </div>
-          {(est > 0 || isLate) && (
-            <div className="flex items-center gap-2 mt-0.5">
-              {est > 0 && (
-                <span className="inline-flex items-center gap-0.5 text-[10px] text-gray-400">
-                  <ClockIcon className="h-3 w-3" />{formatDuration(est)}
-                </span>
-              )}
-              {isLate && (
-                <span className="text-[10px] font-semibold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">Retard</span>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Bouton valider */}
-      {!isDone && (
+      {!isDone ? (
         <button
           onClick={() => onComplete(task)}
           disabled={completingId === task.id}
@@ -121,11 +117,15 @@ function TaskCard({ task, onComplete, completingId }) {
             <CheckIcon className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
           )}
         </button>
-      )}
-      {isDone && (
-        <div className="flex items-center justify-center w-10 sm:w-12 bg-gray-50 flex-shrink-0">
-          <CheckIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-        </div>
+      ) : (
+        <button
+          onClick={() => onUncomplete(task)}
+          className="flex items-center justify-center w-10 sm:w-12 bg-gray-50 hover:bg-orange-50 transition-colors border-l border-gray-200 flex-shrink-0"
+          aria-label="Annuler la validation"
+          title="Annuler"
+        >
+          <XMarkIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 hover:text-orange-500" />
+        </button>
       )}
     </div>
   );
@@ -164,7 +164,7 @@ function WorkloadSummary({ tasks, label, viewMode = 'day' }) {
 }
 
 // Groupe de tâches par type
-function TaskGroup({ type, tasks, onComplete, completingId }) {
+function TaskGroup({ type, tasks, onComplete, onUncomplete, onEditDate, completingId }) {
   const meta = TASK_TYPE_META[type] || { icon: '📋', light: 'bg-gray-50 border-gray-200 text-gray-800' };
   const todoTasks = tasks.filter((t) => t.status !== 'FAIT');
   const doneTasks = tasks.filter((t) => t.status === 'FAIT');
@@ -179,7 +179,7 @@ function TaskGroup({ type, tasks, onComplete, completingId }) {
       </div>
       <div className="space-y-2">
         {todoTasks.map((t) => (
-          <TaskCard key={t.id} task={t} onComplete={onComplete} completingId={completingId} />
+          <TaskCard key={t.id} task={t} onComplete={onComplete} onUncomplete={onUncomplete} onEditDate={onEditDate} completingId={completingId} />
         ))}
         {doneTasks.length > 0 && (
           <button
@@ -190,7 +190,7 @@ function TaskGroup({ type, tasks, onComplete, completingId }) {
           </button>
         )}
         {showDone && doneTasks.map((t) => (
-          <TaskCard key={t.id} task={t} onComplete={onComplete} completingId={completingId} />
+          <TaskCard key={t.id} task={t} onComplete={onComplete} onUncomplete={onUncomplete} onEditDate={onEditDate} completingId={completingId} />
         ))}
       </div>
     </div>
@@ -198,7 +198,7 @@ function TaskGroup({ type, tasks, onComplete, completingId }) {
 }
 
 // Vue JOUR
-function DayView({ date, tasks, onComplete, completingId }) {
+function DayView({ date, tasks, onComplete, onUncomplete, onEditDate, completingId }) {
   // Grouper par type de tâche
   const grouped = useMemo(() => {
     const map = {};
@@ -235,7 +235,7 @@ function DayView({ date, tasks, onComplete, completingId }) {
       ) : (
         <div className="space-y-5">
           {sortedTypes.map((type) => (
-            <TaskGroup key={type} type={type} tasks={grouped[type]} onComplete={onComplete} completingId={completingId} />
+            <TaskGroup key={type} type={type} tasks={grouped[type]} onComplete={onComplete} onUncomplete={onUncomplete} onEditDate={onEditDate} completingId={completingId} />
           ))}
         </div>
       )}
@@ -244,7 +244,7 @@ function DayView({ date, tasks, onComplete, completingId }) {
 }
 
 // Vue SEMAINE
-function WeekView({ date, tasks, onComplete, completingId }) {
+function WeekView({ date, tasks, onComplete, onUncomplete, onEditDate, completingId }) {
   const weekStart = startOfWeek(date, { locale: fr });
   const weekEnd = endOfWeek(date, { locale: fr });
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
@@ -313,7 +313,7 @@ function WeekView({ date, tasks, onComplete, completingId }) {
             </div>
             <div className="space-y-2">
               {dayTasks.map((t) => (
-                <TaskCard key={t.id} task={t} onComplete={onComplete} completingId={completingId} />
+                <TaskCard key={t.id} task={t} onComplete={onComplete} onUncomplete={onUncomplete} onEditDate={onEditDate} completingId={completingId} />
               ))}
             </div>
           </div>
@@ -324,7 +324,7 @@ function WeekView({ date, tasks, onComplete, completingId }) {
 }
 
 // Vue MOIS
-function MonthView({ date, tasks, onComplete, completingId }) {
+function MonthView({ date, tasks, onComplete, onUncomplete, onEditDate, completingId }) {
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);
   const calStart = startOfWeek(monthStart, { locale: fr });
@@ -407,7 +407,7 @@ function MonthView({ date, tasks, onComplete, completingId }) {
           ) : (
             <div className="space-y-2">
               {selectedTasks.map((t) => (
-                <TaskCard key={t.id} task={t} onComplete={onComplete} completingId={completingId} />
+                <TaskCard key={t.id} task={t} onComplete={onComplete} onUncomplete={onUncomplete} onEditDate={onEditDate} completingId={completingId} />
               ))}
             </div>
           )}
@@ -474,12 +474,40 @@ export default function TasksPage() {
     ? `${format(startOfWeek(currentDate, { locale: fr }), 'd', { locale: fr })} – ${format(endOfWeek(currentDate, { locale: fr }), 'd MMM', { locale: fr })}`
     : format(currentDate, 'MMMM yyyy', { locale: fr });
 
-  const handleComplete = async (task) => {
+  const navigate = useNavigate();
+
+  // Modal de confirmation avec durée
+  const [completeModal, setCompleteModal] = useState(null); // task being completed
+  const [durationInput, setDurationInput] = useState('');
+
+  // Modal édition date
+  const [dateEditTask, setDateEditTask] = useState(null);
+  const [dateInput, setDateInput] = useState('');
+
+  const handleCompleteClick = (task) => {
+    const est = estimateMinutes(task);
+    setDurationInput(est > 0 ? (est / 60).toFixed(1) : '');
+    setCompleteModal(task);
+  };
+
+  const handleConfirmComplete = async () => {
+    const task = completeModal;
+    setCompleteModal(null);
     setCompletingId(task.id);
     try {
-      await api.patch(`/tasks/${task.id}/complete`);
+      const body = {};
+      if (durationInput) body.actualDurationHours = parseFloat(durationInput);
+      await api.patch(`/tasks/${task.id}/complete`, body);
       toast.success(`${task.taskTemplate?.templateName || task.name} validé`);
       fetchData();
+
+      // Redirect based on task type
+      const tName = (task.taskTemplate?.templateName || task.taskTemplate?.name || task.name || '').toLowerCase();
+      if (tName.includes('semis') && tName.includes('pépi')) {
+        navigate('/pepiniere');
+      } else if (tName.includes('récolte') || tName.includes('recolte')) {
+        navigate('/recoltes');
+      }
     } catch {
       toast.error('Erreur lors de la validation');
     } finally {
@@ -487,11 +515,36 @@ export default function TasksPage() {
     }
   };
 
+  const handleUncomplete = async (task) => {
+    try {
+      await api.patch(`/tasks/${task.id}/uncomplete`);
+      toast.success('Validation annulée');
+      fetchData();
+    } catch {
+      toast.error('Erreur lors de l\'annulation');
+    }
+  };
+
+  const handleEditDate = (task) => {
+    setDateEditTask(task);
+    setDateInput(task.scheduledDate ? format(parseISO(task.scheduledDate), 'yyyy-MM-dd') : '');
+  };
+
+  const handleSaveDate = async () => {
+    try {
+      await api.put(`/tasks/${dateEditTask.id}`, { scheduledDate: dateInput });
+      toast.success('Date mise à jour');
+      setDateEditTask(null);
+      fetchData();
+    } catch {
+      toast.error('Erreur lors de la mise à jour');
+    }
+  };
+
   return (
     <div className="p-3 sm:p-4 md:p-6 max-w-3xl mx-auto">
-      {/* En-tête compact : navigation + vue + bouton + */}
+      {/* En-tête compact */}
       <div className="mb-4">
-        {/* Ligne 1 : flèches + période + auj + bouton + */}
         <div className="flex items-center gap-1 mb-2">
           <button onClick={navigatePrev} className="btn-ghost p-1.5"><ChevronLeftIcon className="h-4 w-4" /></button>
           <h2 className="flex-1 text-sm font-bold text-gray-900 capitalize text-center">{periodLabel}</h2>
@@ -501,14 +554,10 @@ export default function TasksPage() {
             <PlusIcon className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-        {/* Ligne 2 : sélecteur de vue */}
         <div className="flex gap-0.5 p-0.5 bg-gray-100 rounded-lg w-fit mx-auto">
           {VIEW_MODES.map((v) => (
-            <button
-              key={v.id}
-              onClick={() => setViewMode(v.id)}
-              className={`px-3 py-1 text-xs rounded-md transition-all ${viewMode === v.id ? 'bg-white text-[#1B5E20] shadow-sm font-semibold' : 'text-gray-500'}`}
-            >
+            <button key={v.id} onClick={() => setViewMode(v.id)}
+              className={`px-3 py-1 text-xs rounded-md transition-all ${viewMode === v.id ? 'bg-white text-[#1B5E20] shadow-sm font-semibold' : 'text-gray-500'}`}>
               {v.label}
             </button>
           ))}
@@ -519,16 +568,53 @@ export default function TasksPage() {
       {loading ? (
         <div className="flex justify-center py-12"><LoadingSpinner /></div>
       ) : viewMode === 'day' ? (
-        <DayView date={currentDate} tasks={tasks} onComplete={handleComplete} completingId={completingId} />
+        <DayView date={currentDate} tasks={tasks} onComplete={handleCompleteClick} onUncomplete={handleUncomplete} onEditDate={handleEditDate} completingId={completingId} />
       ) : viewMode === 'week' ? (
-        <WeekView date={currentDate} tasks={tasks} onComplete={handleComplete} completingId={completingId} />
+        <WeekView date={currentDate} tasks={tasks} onComplete={handleCompleteClick} onUncomplete={handleUncomplete} onEditDate={handleEditDate} completingId={completingId} />
       ) : (
-        <MonthView date={currentDate} tasks={tasks} onComplete={handleComplete} completingId={completingId} />
+        <MonthView date={currentDate} tasks={tasks} onComplete={handleCompleteClick} onUncomplete={handleUncomplete} onEditDate={handleEditDate} completingId={completingId} />
       )}
 
       {/* Modal tâche */}
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editingTask ? 'Modifier' : 'Nouvelle tâche'} size="lg">
         <TaskForm task={editingTask} onSuccess={() => { setModalOpen(false); fetchData(); }} onCancel={() => setModalOpen(false)} />
+      </Modal>
+
+      {/* Modal confirmation validation */}
+      <Modal isOpen={!!completeModal} onClose={() => setCompleteModal(null)} title="Valider la tâche">
+        {completeModal && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700">
+              Valider <strong>{completeModal.taskTemplate?.templateName || completeModal.name}</strong> ?
+            </p>
+            <div>
+              <label className="form-label">Temps passé réel (heures)</label>
+              <input type="number" step="0.1" min="0" value={durationInput} onChange={(e) => setDurationInput(e.target.value)}
+                className="form-input" placeholder="Ex: 1.5" />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setCompleteModal(null)} className="btn-secondary flex-1">Annuler</button>
+              <button onClick={handleConfirmComplete} className="btn-primary flex-1">Valider</button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal édition date */}
+      <Modal isOpen={!!dateEditTask} onClose={() => setDateEditTask(null)} title="Modifier la date">
+        {dateEditTask && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-700">{dateEditTask.taskTemplate?.templateName || dateEditTask.name}</p>
+            <div>
+              <label className="form-label">Date prévisionnelle</label>
+              <input type="date" value={dateInput} onChange={(e) => setDateInput(e.target.value)} className="form-input" />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setDateEditTask(null)} className="btn-secondary flex-1">Annuler</button>
+              <button onClick={handleSaveDate} className="btn-primary flex-1">Enregistrer</button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   CheckCircleIcon,
   ExclamationCircleIcon,
   BeakerIcon,
   SparklesIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import { useSeason } from '../context/SeasonContext';
@@ -26,7 +28,7 @@ function CardSkeleton() {
 }
 
 // Carte de statistique résumée
-function StatCard({ icon: Icon, label, value, subValue, color = 'green' }) {
+function StatCard({ icon: Icon, label, value, subValue, color = 'green', onClick }) {
   const colorMap = {
     green: 'bg-green-50 text-green-700',
     blue: 'bg-blue-50 text-blue-700',
@@ -35,7 +37,11 @@ function StatCard({ icon: Icon, label, value, subValue, color = 'green' }) {
   };
 
   return (
-    <div className="card p-3 sm:p-5 flex items-center gap-2.5 sm:gap-4">
+    <div
+      className={`card p-3 sm:p-5 flex items-center gap-2.5 sm:gap-4 ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow active:bg-gray-50' : ''}`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+    >
       <div className={`p-2 sm:p-3 rounded-xl ${colorMap[color] || colorMap.green}`}>
         <Icon className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
       </div>
@@ -44,6 +50,7 @@ function StatCard({ icon: Icon, label, value, subValue, color = 'green' }) {
         {subValue && <p className="text-[10px] sm:text-xs text-gray-400">{subValue}</p>}
       </div>
       <p className="text-2xl sm:text-3xl font-bold text-gray-900 flex-shrink-0">{value}</p>
+      {onClick && <ChevronRightIcon className="h-4 w-4 text-gray-300 flex-shrink-0" />}
     </div>
   );
 }
@@ -90,6 +97,8 @@ export default function DashboardPage() {
     }
   };
 
+  const navigate = useNavigate();
+
   return (
     <div className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       {/* Titre de la page */}
@@ -120,6 +129,7 @@ export default function DashboardPage() {
             value={stats?.nbPretesARecolter ?? '–'}
             subValue="planches prêtes"
             color="green"
+            onClick={() => navigate('/recoltes')}
           />
           <StatCard
             icon={CheckCircleIcon}
@@ -127,6 +137,7 @@ export default function DashboardPage() {
             value={stats?.nbTachesAujourdhui ?? '–'}
             subValue={stats?.nbTachesEnRetard ? `+ ${stats.nbTachesEnRetard} en retard` : ''}
             color="blue"
+            onClick={() => navigate('/taches')}
           />
           <StatCard
             icon={BeakerIcon}
@@ -134,12 +145,14 @@ export default function DashboardPage() {
             value={stats?.nbPepinierePreteARepiquer ?? '–'}
             subValue="prêts au repiquage"
             color="purple"
+            onClick={() => navigate('/pepiniere')}
           />
           <StatCard
             icon={ExclamationCircleIcon}
             label="Tâches en retard"
             value={stats?.nbTachesEnRetard ?? '–'}
             color="orange"
+            onClick={() => navigate('/taches')}
           />
         </div>
       )}
@@ -149,9 +162,12 @@ export default function DashboardPage() {
 
         {/* Tâches du jour */}
         <section className="card p-4 sm:p-5" aria-label="Tâches du jour">
-          <h2 className="flex items-center gap-2 text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">
-            <span aria-hidden="true">✅</span> Tâches du jour
-          </h2>
+          <button onClick={() => navigate('/taches')} className="flex items-center justify-between w-full mb-3 sm:mb-4 hover:opacity-80 transition-opacity">
+            <h2 className="flex items-center gap-2 text-sm sm:text-base font-semibold text-gray-900">
+              <span aria-hidden="true">✅</span> Tâches du jour
+            </h2>
+            <ChevronRightIcon className="h-4 w-4 text-gray-300" />
+          </button>
           {loading ? (
             <div className="space-y-2">
               {[...Array(3)].map((_, i) => (
@@ -197,9 +213,12 @@ export default function DashboardPage() {
 
         {/* Récoltes à faire */}
         <section className="card p-4 sm:p-5" aria-label="Récoltes à faire">
-          <h2 className="flex items-center gap-2 text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">
-            <span aria-hidden="true">🥬</span> Récoltes à faire
-          </h2>
+          <button onClick={() => navigate('/recoltes')} className="flex items-center justify-between w-full mb-3 sm:mb-4 hover:opacity-80 transition-opacity">
+            <h2 className="flex items-center gap-2 text-sm sm:text-base font-semibold text-gray-900">
+              <span aria-hidden="true">🥬</span> Récoltes à faire
+            </h2>
+            <ChevronRightIcon className="h-4 w-4 text-gray-300" />
+          </button>
           {loading ? (
             <div className="space-y-2">
               {[...Array(3)].map((_, i) => (
@@ -232,9 +251,12 @@ export default function DashboardPage() {
 
         {/* Pépinière prête */}
         <section className="card p-4 sm:p-5" aria-label="Pépinière prête au repiquage">
-          <h2 className="flex items-center gap-2 text-sm sm:text-base font-semibold text-gray-900 mb-3 sm:mb-4">
-            <span aria-hidden="true">🌿</span> Pépinière prête
-          </h2>
+          <button onClick={() => navigate('/pepiniere')} className="flex items-center justify-between w-full mb-3 sm:mb-4 hover:opacity-80 transition-opacity">
+            <h2 className="flex items-center gap-2 text-sm sm:text-base font-semibold text-gray-900">
+              <span aria-hidden="true">🌿</span> Pépinière prête
+            </h2>
+            <ChevronRightIcon className="h-4 w-4 text-gray-300" />
+          </button>
           {loading ? (
             <div className="space-y-2">
               {[...Array(3)].map((_, i) => (
